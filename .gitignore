@@ -1,0 +1,18 @@
+# Python 环境
+.venv/
+venv/
+*.pyc
+__pycache__/
+*.egg-info/
+.eggs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# 项目特定
+.env
+logs/
+*.log
+*.tmp
