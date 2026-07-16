@@ -1,47 +1,62 @@
 """
-Retriever Agent：TaskCard → 知识图谱检索 → 上下文
+T2.4 Retriever Agent：TaskCard → 知识图谱检索 → RetrievedContext
+
+优先从注入的 GraphStore 按 task_type 检索；无图谱/命中为空时回退内置上下文。
+关键：始终纳入 FailureCase（accuracy 选模废模型），供 Planner 规避。
 """
 
 from factory.agents.base import Agent
-from factory.state import TaskState
+from factory.state import TaskState, RetrievedContext
+
+_APPLICABLE = ["IsolationForest", "LocalOutlierFactor", "OneClassSVM"]
+_LESSONS = [
+    "contamination 建议 0.01–0.05，应与真实异常占比一致",
+    "高维(>100维)时 LOF 易退化，改用 novelty=True 或 IsolationForest",
+    "距离/密度类(LOF/OCSVM)上线前必须 StandardScaler",
+    "极不平衡场景禁用 accuracy 选优，主指标用 PR-AUC / F1(anomaly)",
+]
+_FAILURES = [
+    {
+        "title": "用 accuracy 选模导致废模型",
+        "root_cause": "正常样本占比 >95%，accuracy 被多数类主导虚高",
+        "fix_suggestion": "改用 PR-AUC 作为主指标",
+    }
+]
 
 
 class RetrieverAgent(Agent):
-    def __init__(self, llm_client=None):
+    def __init__(self, llm_client=None, graph_store=None):
         super().__init__(name="Retriever", llm_client=llm_client)
+        self.graph_store = graph_store
 
     def _run(self, state: TaskState) -> TaskState:
-        """
-        Mock 模式：返回预定义的检索结果
-        真实模式（Day 2）：从 GraphStore 检索
-        """
-        if state._use_mock:
-            state.retrieved_context = {
-                "similar_capabilities": [
-                    {
-                        "name": "IForest on sensors",
-                        "success_rate": 0.0,  # Day 1 初值都是 0
-                        "pr_auc": 0.84
-                    }
-                ],
-                "applicable_algorithms": ["IForest", "LOF", "OCSVM"],
-                "lessons": [
-                    {
-                        "title": "contamination 参数设置",
-                        "content": "推荐值 0.01-0.05，与真实异常占比一致"
-                    },
-                    {
-                        "title": "高维空间下 LOF 退化",
-                        "content": "维度 > 100 时应使用 novelty=True 或改用 IForest"
-                    }
-                ],
-                "failure_cases": [
-                    {
-                        "title": "用 Accuracy 选模导致废模型",
-                        "fix_suggestion": "使用 PR-AUC 作为主指标"
-                    }
-                ]
-            }
-            return state
+        task_type = getattr(state.task_card, "task_type", "anomaly_detection")
+        state.retrieved_context = self._from_graph(task_type) or self._fallback()
+        return state
 
-        raise NotImplementedError("真实 Retriever 在 Day 2 实现")
+    def _from_graph(self, task_type: str):
+        if self.graph_store is None:
+            return None
+        try:
+            hits = self.graph_store.query_by_task_type(task_type)
+            if not hits:
+                return None
+            caps = [{"id": k, **(v if isinstance(v, dict) else {})} for k, v in hits.items()]
+            return RetrievedContext(
+                similar_capabilities=caps,
+                failure_cases=_FAILURES,
+                lessons=_LESSONS,
+            )
+        except Exception:
+            return None
+
+    def _fallback(self) -> RetrievedContext:
+        return RetrievedContext(
+            similar_capabilities=[{
+                "name": "IForest on industrial sensors",
+                "applicable_algorithms": _APPLICABLE,
+                "success_rate": 0.0,
+            }],
+            failure_cases=_FAILURES,
+            lessons=_LESSONS,
+        )

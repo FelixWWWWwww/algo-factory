@@ -198,34 +198,26 @@ if __name__ == "__main__":
                 "failure_cases": [
                     {
                         "name": "using accuracy on imbalanced data",
-                        "description": "在极度不平衡数据上使用 accuracy 会掩盖异常样本的召回问题。",
-                        "root_cause": "accuracy 受正常样本主导，无法反映异常检测效果。",
-                        "affected_scenario": "anomaly ratio < 5%",
-                        "severity": "high",
-                        "mitigation": "改用 PR-AUC、Recall 和 F1 作为主指标。"
+                        "description": "在极度不平衡数据上用 accuracy 选模，选中'全判正常'的废模型。",
+                        "root_cause": "正常样本占比 > 95%，accuracy 被多数类主导，虚高至 0.95+。",
+                        "lesson": "异常检测必须用 PR-AUC / F1(anomaly) 作为主指标，禁用 accuracy 选优。"
                     }
                 ],
-                "lessons": [
-                    {
-                        "title": "Always use PR-AUC for imbalanced anomaly detection",
-                        "description": "当异常样本占比很低时，PR-AUC 比 accuracy 更能反映模型效果。",
-                        "affected_algorithms": ["all"],
-                        "priority": "high"
-                    }
-                ]
             }
             return {
                 "message": json.dumps(response_data, ensure_ascii=False, indent=2),
-                "usage": {"prompt_tokens": 50, "completion_tokens": 100}
+                "usage": {"prompt_tokens": 80, "completion_tokens": 200},
             }
-        elif "eda" in full_prompt or "分布" in full_prompt or "缺失" in full_prompt:
-            agent_type = "eda"
-        elif "interpreter" in full_prompt or "任务" in full_prompt:
+
+        # ── 关键字分派：interpreter / planner / coder / eda ──
+        if "interpreter" in full_prompt or "任务" in full_prompt:
             agent_type = "interpreter"
         elif "planner" in full_prompt or "方案" in full_prompt:
             agent_type = "planner"
         elif "coder" in full_prompt or "代码" in full_prompt:
             agent_type = "coder"
+        elif "eda" in full_prompt or "摘要" in full_prompt or "分布" in full_prompt:
+            agent_type = "eda"
         else:
             agent_type = "interpreter"
 
@@ -233,25 +225,22 @@ if __name__ == "__main__":
         if not responses:
             return {
                 "message": "No mock data available",
-                "usage": {"prompt_tokens": 0, "completion_tokens": 0}
+                "usage": {"prompt_tokens": 0, "completion_tokens": 0},
             }
 
         if self.mode == "random":
             import random
             response_data = random.choice(responses)
         else:
-            if agent_type not in self.call_count:
-                self.call_count[agent_type] = 0
-            idx = self.call_count[agent_type] % len(responses)
+            idx = self.call_count.get(agent_type, 0) % len(responses)
             response_data = responses[idx]
-            self.call_count[agent_type] += 1
+            self.call_count[agent_type] = idx + 1
 
-        if isinstance(response_data, str):
-            message = response_data  # coder：直接返回代码字符串
-        else:
-            message = json.dumps(response_data, ensure_ascii=False, indent=2)
-
+        message = (
+            response_data if isinstance(response_data, str)
+            else json.dumps(response_data, ensure_ascii=False, indent=2)
+        )
         return {
             "message": message,
-            "usage": {"prompt_tokens": 50, "completion_tokens": 100}
+            "usage": {"prompt_tokens": 50, "completion_tokens": 100},
         }

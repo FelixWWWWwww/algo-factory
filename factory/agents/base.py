@@ -52,7 +52,7 @@ class Agent(ABC):
             self.end_time = time.time()
             duration = self.end_time - self.start_time
 
-            print(f"\n✅ [{self.name}] 完成（耗时 {duration:.2f}s）")
+            print(f"\n[{self.name}] 完成（耗时 {duration:.2f}s）")
             print(f"   状态更新字段：{self._get_changed_fields(state)}")
 
             # 记录到错误历史（成功）
@@ -69,7 +69,7 @@ class Agent(ABC):
             self.end_time = time.time()
             duration = self.end_time - self.start_time
 
-            print(f"\n❌ [{self.name}] 失败：{type(e).__name__}: {e}")
+            print(f"\n[{self.name}] 失败：{type(e).__name__}: {e}")
 
             # 记录到错误历史
             state.error_history.append({
@@ -101,4 +101,3 @@ class Agent(ABC):
         实际产品可用 __dict__ diff。
         """
         return ["task_card", "retrieved_context", "plans", "code", "metrics", "validation_results"]
-

@@ -1,0 +1,31 @@
+# LLM & API
+openai>=1.30
+tenacity>=8.3
+
+# 数据处理 & 验证
+pydantic>=2.7
+pyyaml>=6.0
+python-dotenv>=1.0
+pandas>=2.2
+numpy>=1.26
+scikit-learn>=1.5          # 内置 IsolationForest / OneClassSVM / LocalOutlierFactor
+scipy>=1.11                # z-score / IQR 统计兜底
+
+# 异常检测专用（场景：Anomaly Detection）
+pyod>=2.0                  # 统一异常检测 API + ECOD / COPOD / AutoEncoder 等加分算法
+# 注：churn 场景的 xgboost 已移除；异常检测不使用 SMOTE / 过采样，故不引入 imbalanced-learn
+
+# 知识图谱
+networkx>=3.3
+pyvis>=0.3.2
+
+# LLM 输出修复（重要！）
+json-repair>=0.25
+
+# Web 框架 & CLI
+streamlit>=1.35
+typer>=0.12
+jinja2>=3.1
+
+# 测试
+pytest>=8.2

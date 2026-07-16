@@ -79,5 +79,36 @@ def status(task_id: str = typer.Argument(..., help="Task ID")):
     print(f"   Metrics: {data.get('metrics')}")
 
 
+@app.command()
+def run_dag(
+        data_path: str = typer.Argument(..., help="CSV 数据路径"),
+        mock: bool = typer.Option(False, "--mock/--real", help="Mock vs 真实 LLM"),
+):
+    """
+    运行 DAG Pipeline（Day 2+）
+
+    示例：
+    \b
+    # 真实模式（有 API Key）
+    python cli.py run-dag data/synth/sensor_anomaly.csv --real
+
+    \b
+    # Mock 模式
+    python cli.py run-dag data/synth/sensor_anomaly.csv --mock
+    """
+    _ensure_utf8_stdout()
+    from factory.dag_pipeline import DAGPipeline
+
+    pipeline = DAGPipeline(use_mock=mock)
+    state = pipeline.run(data_path)
+
+    output_file = pipeline.dump_state(state)
+
+    print(f"\n✅ DAG Pipeline 完成")
+    print(f"   最优模型: {state.best_model_name}")
+    if state.eval_metrics:
+        print(f"   PR-AUC: {state.eval_metrics.get('pr_auc', 'N/A')}")
+    print(f"   结果: {output_file}")
+
 if __name__ == "__main__":
     app()

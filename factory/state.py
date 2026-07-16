@@ -130,6 +130,18 @@ class TaskState(BaseModel):
     topk_indices: List[int] = []  # Top-K 最可疑样本的行号（无标签路径）
     eval_info: Dict[str, Any] = {}  # 评估过程记录（路径、边界处理说明）
 
+    # ===== Day 2.7 新字段 =====
+    trained_models: dict = {}           # 所有训练的模型 {algo_name: factory}
+    best_model_name: str = ""           # 最优模型算法名
+    model_comparison: list[dict] = []   # 模型对比结果
+    eval_metrics: dict = {}             # 评估指标
+    final_metrics: dict = {}            # 可靠指标子集
+
+    # ===== T2.8 新字段 =====
+    model_comparison: list[dict] = []           # 模型对比结果
+    best_model: str = ""                        # 最优模型名
+    model_selection_explanation: dict = {}      # LLM 生成的选择解释
+
     # ========== 异常检测运行产物 ==========
     anomaly_ratio: Optional[float] = None      # EDA 实测异常占比
     contamination: float = 0.05                # 全局采用的异常比例假设

@@ -6,6 +6,7 @@ factory/pipeline.py
 import uuid
 from datetime import datetime
 from pathlib import Path
+from factory.config import get_llm_client
 from factory.state import TaskState
 from factory.llm.client import LLMClient
 from factory.llm.mock_client import MockClient
@@ -42,8 +43,7 @@ class Pipeline:
         if use_mock:
             self.llm = MockClient()
         else:
-            from factory.llm.openai_client import OpenAIClient
-            self.llm = OpenAIClient()
+            self.llm = get_llm_client()
 
         # 初始化各 Agent
         self.agents: dict[str, Agent] = {

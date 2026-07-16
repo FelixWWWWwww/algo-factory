@@ -1,12 +1,28 @@
 # factory/llm/structured.py
-import os
 import re
 import json
 from typing import Any, Dict, Type, TypeVar, Optional
 from pydantic import BaseModel, ValidationError
-import json_repair
-from tenacity import retry, stop_after_attempt, wait_exponential
 import logging
+
+try:
+    import json_repair
+except Exception:  # pragma: no cover
+    json_repair = None
+
+try:
+    from tenacity import retry, stop_after_attempt, wait_exponential
+except Exception:  # pragma: no cover
+    def retry(*args, **kwargs):
+        def decorator(func):
+            return func
+        return decorator
+
+    def stop_after_attempt(*args, **kwargs):
+        return None
+
+    def wait_exponential(*args, **kwargs):
+        return None
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +103,10 @@ class StructuredOutput:
 
         # Step 3: 用 json_repair 修复常见错误
         try:
-            data = json_repair.loads(cleaned_output)
+            if json_repair is not None:
+                data = json_repair.loads(cleaned_output)
+            else:
+                data = json.loads(cleaned_output)
         except Exception as e:
             logger.error(f"json_repair 失败: {e}")
             # 最后的兜底：尝试原始 json.loads
@@ -140,11 +159,7 @@ def call_structured(
         llm_client = MockClient()
     else:
         from .openai_client import OpenAIClient
-        llm_client = OpenAIClient(
-            api_key=os.getenv("OPENAI_API_KEY"),
-            base_url=os.getenv("OPENAI_BASE_URL"),
-            model=model or os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
-        )
+        llm_client = OpenAIClient(model=model)
 
     structured = StructuredOutput(llm_client)
     result = structured.call_structured(prompt=prompt, schema=pydantic_model, model=model)
