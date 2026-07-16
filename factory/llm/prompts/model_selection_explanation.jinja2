@@ -1,0 +1,33 @@
+{# 根据模型对比结果，生成选择理由 #}
+
+你是异常检测专家。现在有三个模型的竞赛结果，请解释为什么选择了最优模型。
+
+## 数据信息
+- 样本数：{{ n_samples }}
+- 特征维度：{{ n_features }}
+- 异常占比：{{ anomaly_ratio | round(2) }}%
+- 标签情况：{{ "有标签（有监督评估）" if has_labels else "无标签（无监督）" }}
+
+## 模型竞赛结果
+
+| 算法 | PR-AUC | F1 | Precision | Recall | 耗时 |
+|-----|--------|----|-----------|---------|----|
+{% for result in results %}
+| {{ result.algorithm }} | {{ "%.4f"|format(result.pr_auc) }} | {{ "%.4f"|format(result.f1) }} | {{ "%.4f"|format(result.precision) }} | {{ "%.4f"|format(result.recall) }} | {{ "%.2f"|format(result.elapsed_sec) }}s |
+{% endfor %}
+
+## 最优模型：{{ best_algorithm }}
+
+请用自然语言解释：
+1. 为什么 {{ best_algorithm }} 最优？（基于 PR-AUC）
+2. 与第二名（{{ second_algorithm }}）的关键差异？
+3. 该算法对此数据的特殊优势？
+4. 可能的改进方向？
+
+输出 JSON 格式：
+{
+  "choice_rationale": "选择理由",
+  "vs_second_place": "与第二名的对比",
+  "data_fit": "与数据特征的适配度分析",
+  "improvement_suggestions": ["建议1", "建议2"]
+}
