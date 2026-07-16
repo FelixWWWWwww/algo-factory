@@ -57,6 +57,20 @@ def data_ingestion_node(state: "TaskState", csv_path: str) -> "TaskState":
     return state
 
 
+def ingestion_node(
+    state: "TaskState",
+    csv_path: str = "",
+    data_path: str = "",
+) -> "TaskState":
+    """兼容旧入口名。"""
+    path = csv_path or data_path
+    if not path:
+        logger.error("[ingestion] 未提供 CSV 路径")
+        state.add_error("ingestion", "RuntimeError", "未提供 CSV 路径")
+        return state
+    return data_ingestion_node(state, path)
+
+
 # ─────────────────────────────────────────────
 # 节点 2：EDA 分析 + LLM 摘要
 # ─────────────────────────────────────────────
@@ -128,7 +142,9 @@ def eda_node(state: "TaskState", llm_client) -> "TaskState":
     try:
         messages = [{"role": "user", "content": prompt}]
         response = llm_client.chat(messages)
-        summary = response.get("message", "").strip()
+        if response.get("error"):
+            raise ValueError(response["error"])
+        summary = (response.get("message") or "").strip()
         if not summary:
             raise ValueError("LLM 返回为空")
         state.eda_summary = summary
