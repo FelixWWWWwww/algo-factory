@@ -28,9 +28,11 @@ _当前落地场景：极度不平衡的**异常检测**（Anomaly Detection）_
 ![算法能力工厂 · Demo](docs/demo/demo.gif)
 
 <sub>▲ 12× 加速预览：一句话需求 → 多智能体自动生成、验证、择优、图谱自进化</sub><br/>
-<sub>🎬 完整演示（约 3 分钟，含语音讲解）见 <code>DEMO.mp4</code></sub>
+<sub>🎬 完整演示（约 3 分钟，含语音讲解）↓</sub>
 
 </div>
+
+https://github.com/user-attachments/assets/1c0c2a5a-d7d6-42e5-aec2-72309b9109af
 
 ---
 
