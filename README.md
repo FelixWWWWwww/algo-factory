@@ -22,6 +22,16 @@ _当前落地场景：极度不平衡的**异常检测**（Anomaly Detection）_
 > python cli.py run "对工业传感器数据进行异常检测" --mock
 > ```
 
+<div align="center">
+
+<!-- 📽️ 把你的录屏改名为 demo.gif 放到 docs/demo/ 目录，下面这张图就会自动显示 -->
+![算法能力工厂 · Demo](docs/demo/demo.gif)
+
+<sub>▲ 12× 加速预览：一句话需求 → 多智能体自动生成、验证、择优、图谱自进化</sub><br/>
+<sub>🎬 完整演示（约 3 分钟，含语音讲解）见 <code>DEMO.mp4</code></sub>
+
+</div>
+
 ---
 
 ## 📑 目录
@@ -65,6 +75,7 @@ _当前落地场景：极度不平衡的**异常检测**（Anomaly Detection）_
 | 🔒 | **沙箱安全执行** | 生成代码经 AST 安全扫描后，在隔离子进程中运行，超时硬熔断 |
 | 🔁 | **失败自动修复** | 验证不通过 → 带"负面约束"退回重写，最多 N 轮 |
 | 🧠 | **知识图谱自沉淀** | 每次结果（含失败案例）回写图谱，越用越聪明 |
+| 🔁 | **图谱自进化 · 从失败中学习** | 第二次遇到同类任务，自动检索历史失败并**规避/降级**（`demo_second_run.py` 可复现验证） |
 | 🔌 | **三种交互入口** | CLI / Streamlit Web UI / FastAPI，一套内核全覆盖 |
 | 🎭 | **Mock / Real 无缝切换** | 无 API Key 也能全链路演示；接 DeepSeek 即真实推理 |
 | ✅ | **106 个测试护航** | 单元 / 集成 / 端到端 / 边界用例全绿 |
@@ -157,6 +168,30 @@ flowchart TD
   ]
 }
 ```
+
+### 🔁 从失败中学习（自进化 · 可复现验证）
+
+沉淀不是终点——**关键是下次能否规避同一个坑。** 系统把失败写成 `FailureCase` 与可复用的 `Lesson` 节点；下次同类任务，Retriever 从图谱检索到这些教训，Planner 据此**主动降级历史失败算法**。
+
+一条命令即可现场验证（`demo_second_run.py`）：
+
+```bash
+python demo_second_run.py
+```
+
+```text
+第 1 次运行（图谱空白，无先验）
+    1. IsolationForest     [正常提出]
+    2. LocalOutlierFactor  [正常提出]
+    3. OneClassSVM         [正常提出]
+
+第 2 次运行（已加载图谱，携带上次失败经验）
+    1. IsolationForest     [正常提出]
+    2. LocalOutlierFactor  [⚠️ 历史失败已规避]
+    3. OneClassSVM         [⚠️ 历史失败已规避]
+```
+
+> 第一次三方案平起平坐；第二次系统从知识图谱检索到 LOF / OCSVM 的失败，**主动标注并降级**——这就是"能力沉淀 → 复用"的闭环，可复现、可验证。
 
 ---
 
@@ -296,6 +331,7 @@ timeout_sec: 60
 - [ ] Planner 引入 Beam Search / MCTS 做方案搜索
 - [ ] 跨场景迁移：同一框架复用于文本分类 / 表格分类（`validation/*.yaml` 插件化已预留）
 - [ ] 时序 / 流式异常检测
+- [x] 知识图谱自进化：失败沉淀 → 下次自动规避（见 `demo_second_run.py`）
 - [ ] 知识图谱 PyVis 交互式可视化
 - [ ] 从真实代码仓库自动抽取函数与依赖
 
