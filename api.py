@@ -1,4 +1,3 @@
-# api.py
 import os, json, tempfile
 from fastapi import FastAPI, UploadFile, File, Form
 from factory.pipeline import Pipeline
@@ -26,6 +25,12 @@ async def run_task(query: str = Form(...), mock: bool = Form(True),
 @app.get("/graph")
 def get_graph():
     p = "data/knowledge_graph.json"
-    if os.path.exists(p):
-        return json.loads(open(p, encoding="utf-8").read())
-    return {"nodes": {}, "edges": []}
+    if not os.path.exists(p):
+        return {"nodes": {}, "edges": []}
+    raw = open(p, "rb").read()
+    for enc in ("utf-8", "gbk"):          # 兼容历史上被 GBK 写坏的文件
+        try:
+            return json.loads(raw.decode(enc))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            continue
+    return {"nodes": {}, "edges": [], "error": "graph file decode failed"}

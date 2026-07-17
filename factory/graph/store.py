@@ -51,11 +51,11 @@ class GraphStore:
 
     def save(self, path: str):
         """保存为 JSON（Day 3 图谱回写用）"""
-        Path(path).write_text(json.dumps(self.to_json(), indent=2, ensure_ascii=False))
+        Path(path).write_text(json.dumps(self.to_json(), indent=2, ensure_ascii=False), encoding="utf-8")
 
     def load(self, path: str):
         """从 JSON 加载"""
-        data = json.loads(Path(path).read_text())
+        data = json.loads(Path(path).read_text(encoding="utf-8"))
         for node_id, attrs in data["nodes"].items():
             self.add_node(node_id, **attrs)
         for edge in data["edges"]:

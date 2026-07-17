@@ -1,268 +1,86 @@
 {
   "nodes": {
-    "capability:failure_case_accuracy:Industrial_sensor_anomaly_detection": {
+    "capability:anomaly_detection": {
       "type": "Capability",
-      "name": "Industrial sensor anomaly detection",
-      "description": "在工业传感器数据上识别异常样本，适用于低标签或无标签场景。",
-      "algorithm": "IsolationForest",
       "task_type": "anomaly_detection",
-      "domain": "industrial_sensors",
-      "success_rate": 0.0
+      "target": "识别设备传感器读数中的离群点"
     },
-    "algorithm:IsolationForest": {
+    "validationrun:task_20260717_090616_d81ac910:v1": {
+      "type": "ValidationRun",
+      "task_type": "anomaly_detection",
+      "timestamp": "2026-07-17T09:06:18.025261",
+      "status": "passed",
+      "pr_auc": 1.0,
+      "f1": 0.5714
+    },
+    "algorithm:Isolation Forest 方案": {
       "type": "Algorithm",
-      "name": "IsolationForest",
-      "description": "IsolationForest algorithm",
-      "task_types": [
-        "anomaly_detection"
-      ]
+      "name": "Isolation Forest 方案"
     },
-    "metric:pr_auc": {
-      "type": "Metric",
-      "name": "pr_auc",
-      "description": "用于评估极度不平衡异常检测任务的主指标。",
-      "ideal_value": 1.0,
-      "min_threshold": 0.6
+    "validationrun:task_20260717_090616_d81ac910:v2": {
+      "type": "ValidationRun",
+      "task_type": "anomaly_detection",
+      "timestamp": "2026-07-17T09:06:19.738474",
+      "status": "failed",
+      "pr_auc": 0.0587,
+      "f1": 0.0429
     },
-    "dependency:scikit-learn": {
-      "type": "Dependency",
-      "name": "scikit-learn",
-      "module": "sklearn.ensemble.IsolationForest",
-      "version_requirement": ">=1.0",
-      "reason": "提供 IsolationForest 等核心异常检测实现。"
+    "algorithm:LOF 方案": {
+      "type": "Algorithm",
+      "name": "LOF 方案"
     },
-    "lesson:failure_case_accuracy:Always_use_PR-AUC_for_imbalanced_anomaly_detection": {
-      "type": "Lesson",
-      "title": "Always use PR-AUC for imbalanced anomaly detection",
-      "description": "当异常样本占比很低时，PR-AUC 比 accuracy 更能反映模型效果。",
-      "affected_algorithms": [
-        "all"
-      ],
-      "priority": "high",
-      "source_document": "failure_case_accuracy"
-    },
-    "failure_case:using_accuracy_on_imbalanced_data": {
+    "failurecase:task_20260717_090616_d81ac910:v2": {
       "type": "FailureCase",
-      "name": "using accuracy on imbalanced data",
-      "description": "在极度不平衡数据上使用 accuracy 会掩盖异常样本的召回问题。",
-      "root_cause": "accuracy 受正常样本主导，无法反映异常检测效果。",
-      "affected_scenario": "anomaly ratio < 5%",
-      "severity": "high",
-      "mitigation": "改用 PR-AUC、Recall 和 F1 作为主指标。",
-      "source_document": "ocsvm_tuning"
+      "reason": "pr_auc=0.0587 < 阈值 0.6"
     },
-    "lesson:using_accuracy_on_imbalanced_data:mitigation": {
-      "type": "Lesson",
-      "title": "Avoid: using accuracy on imbalanced data",
-      "description": "改用 PR-AUC、Recall 和 F1 作为主指标。",
-      "affected_algorithms": [
-        "all"
-      ],
-      "priority": "high",
-      "source_document": "ocsvm_tuning"
-    },
-    "capability:feature_engineering_anomaly:Industrial_sensor_anomaly_detection": {
-      "type": "Capability",
-      "name": "Industrial sensor anomaly detection",
-      "description": "在工业传感器数据上识别异常样本，适用于低标签或无标签场景。",
-      "algorithm": "IsolationForest",
+    "validationrun:task_20260717_090616_d81ac910:v3": {
+      "type": "ValidationRun",
       "task_type": "anomaly_detection",
-      "domain": "industrial_sensors",
-      "success_rate": 0.0
+      "timestamp": "2026-07-17T09:06:21.035774",
+      "status": "passed",
+      "pr_auc": 0.8286,
+      "f1": 0.7692
     },
-    "lesson:feature_engineering_anomaly:Always_use_PR-AUC_for_imbalanced_anomaly_detection": {
-      "type": "Lesson",
-      "title": "Always use PR-AUC for imbalanced anomaly detection",
-      "description": "当异常样本占比很低时，PR-AUC 比 accuracy 更能反映模型效果。",
-      "affected_algorithms": [
-        "all"
-      ],
-      "priority": "high",
-      "source_document": "feature_engineering_anomaly"
-    },
-    "capability:iforest_sensor_experience:Industrial_sensor_anomaly_detection": {
-      "type": "Capability",
-      "name": "Industrial sensor anomaly detection",
-      "description": "在工业传感器数据上识别异常样本，适用于低标签或无标签场景。",
-      "algorithm": "IsolationForest",
-      "task_type": "anomaly_detection",
-      "domain": "industrial_sensors",
-      "success_rate": 0.0
-    },
-    "lesson:iforest_sensor_experience:Always_use_PR-AUC_for_imbalanced_anomaly_detection": {
-      "type": "Lesson",
-      "title": "Always use PR-AUC for imbalanced anomaly detection",
-      "description": "当异常样本占比很低时，PR-AUC 比 accuracy 更能反映模型效果。",
-      "affected_algorithms": [
-        "all"
-      ],
-      "priority": "high",
-      "source_document": "iforest_sensor_experience"
-    },
-    "capability:lof_high_dim:Industrial_sensor_anomaly_detection": {
-      "type": "Capability",
-      "name": "Industrial sensor anomaly detection",
-      "description": "在工业传感器数据上识别异常样本，适用于低标签或无标签场景。",
-      "algorithm": "IsolationForest",
-      "task_type": "anomaly_detection",
-      "domain": "industrial_sensors",
-      "success_rate": 0.0
-    },
-    "lesson:lof_high_dim:Always_use_PR-AUC_for_imbalanced_anomaly_detection": {
-      "type": "Lesson",
-      "title": "Always use PR-AUC for imbalanced anomaly detection",
-      "description": "当异常样本占比很低时，PR-AUC 比 accuracy 更能反映模型效果。",
-      "affected_algorithms": [
-        "all"
-      ],
-      "priority": "high",
-      "source_document": "lof_high_dim"
-    },
-    "capability:ocsvm_tuning:Industrial_sensor_anomaly_detection": {
-      "type": "Capability",
-      "name": "Industrial sensor anomaly detection",
-      "description": "在工业传感器数据上识别异常样本，适用于低标签或无标签场景。",
-      "algorithm": "IsolationForest",
-      "task_type": "anomaly_detection",
-      "domain": "industrial_sensors",
-      "success_rate": 0.0
-    },
-    "lesson:ocsvm_tuning:Always_use_PR-AUC_for_imbalanced_anomaly_detection": {
-      "type": "Lesson",
-      "title": "Always use PR-AUC for imbalanced anomaly detection",
-      "description": "当异常样本占比很低时，PR-AUC 比 accuracy 更能反映模型效果。",
-      "affected_algorithms": [
-        "all"
-      ],
-      "priority": "high",
-      "source_document": "ocsvm_tuning"
+    "algorithm:One-Class SVM 方案": {
+      "type": "Algorithm",
+      "name": "One-Class SVM 方案"
     }
   },
   "edges": [
     {
-      "source": "capability:failure_case_accuracy:Industrial_sensor_anomaly_detection",
-      "target": "algorithm:IsolationForest",
+      "source": "capability:anomaly_detection",
+      "target": "validationrun:task_20260717_090616_d81ac910:v1",
+      "edge_type": "VALIDATED_IN"
+    },
+    {
+      "source": "capability:anomaly_detection",
+      "target": "algorithm:Isolation Forest 方案",
       "edge_type": "USES_ALGORITHM"
     },
     {
-      "source": "capability:failure_case_accuracy:Industrial_sensor_anomaly_detection",
-      "target": "metric:pr_auc",
-      "edge_type": "EVALUATED_BY"
+      "source": "capability:anomaly_detection",
+      "target": "validationrun:task_20260717_090616_d81ac910:v2",
+      "edge_type": "VALIDATED_IN"
     },
     {
-      "source": "capability:failure_case_accuracy:Industrial_sensor_anomaly_detection",
-      "target": "dependency:scikit-learn",
-      "edge_type": "REQUIRES"
-    },
-    {
-      "source": "capability:failure_case_accuracy:Industrial_sensor_anomaly_detection",
-      "target": "lesson:failure_case_accuracy:Always_use_PR-AUC_for_imbalanced_anomaly_detection",
-      "edge_type": "HAS_LESSON"
-    },
-    {
-      "source": "failure_case:using_accuracy_on_imbalanced_data",
-      "target": "lesson:using_accuracy_on_imbalanced_data:mitigation",
-      "edge_type": "CAUSED_LESSON"
-    },
-    {
-      "source": "failure_case:using_accuracy_on_imbalanced_data",
-      "target": "lesson:using_accuracy_on_imbalanced_data:mitigation",
-      "edge_type": "CAUSED_LESSON"
-    },
-    {
-      "source": "failure_case:using_accuracy_on_imbalanced_data",
-      "target": "lesson:using_accuracy_on_imbalanced_data:mitigation",
-      "edge_type": "CAUSED_LESSON"
-    },
-    {
-      "source": "failure_case:using_accuracy_on_imbalanced_data",
-      "target": "lesson:using_accuracy_on_imbalanced_data:mitigation",
-      "edge_type": "CAUSED_LESSON"
-    },
-    {
-      "source": "failure_case:using_accuracy_on_imbalanced_data",
-      "target": "lesson:using_accuracy_on_imbalanced_data:mitigation",
-      "edge_type": "CAUSED_LESSON"
-    },
-    {
-      "source": "capability:feature_engineering_anomaly:Industrial_sensor_anomaly_detection",
-      "target": "algorithm:IsolationForest",
+      "source": "capability:anomaly_detection",
+      "target": "algorithm:LOF 方案",
       "edge_type": "USES_ALGORITHM"
     },
     {
-      "source": "capability:feature_engineering_anomaly:Industrial_sensor_anomaly_detection",
-      "target": "metric:pr_auc",
-      "edge_type": "EVALUATED_BY"
+      "source": "capability:anomaly_detection",
+      "target": "validationrun:task_20260717_090616_d81ac910:v3",
+      "edge_type": "VALIDATED_IN"
     },
     {
-      "source": "capability:feature_engineering_anomaly:Industrial_sensor_anomaly_detection",
-      "target": "dependency:scikit-learn",
-      "edge_type": "REQUIRES"
-    },
-    {
-      "source": "capability:feature_engineering_anomaly:Industrial_sensor_anomaly_detection",
-      "target": "lesson:feature_engineering_anomaly:Always_use_PR-AUC_for_imbalanced_anomaly_detection",
-      "edge_type": "HAS_LESSON"
-    },
-    {
-      "source": "capability:iforest_sensor_experience:Industrial_sensor_anomaly_detection",
-      "target": "algorithm:IsolationForest",
+      "source": "capability:anomaly_detection",
+      "target": "algorithm:One-Class SVM 方案",
       "edge_type": "USES_ALGORITHM"
     },
     {
-      "source": "capability:iforest_sensor_experience:Industrial_sensor_anomaly_detection",
-      "target": "metric:pr_auc",
-      "edge_type": "EVALUATED_BY"
-    },
-    {
-      "source": "capability:iforest_sensor_experience:Industrial_sensor_anomaly_detection",
-      "target": "dependency:scikit-learn",
-      "edge_type": "REQUIRES"
-    },
-    {
-      "source": "capability:iforest_sensor_experience:Industrial_sensor_anomaly_detection",
-      "target": "lesson:iforest_sensor_experience:Always_use_PR-AUC_for_imbalanced_anomaly_detection",
-      "edge_type": "HAS_LESSON"
-    },
-    {
-      "source": "capability:lof_high_dim:Industrial_sensor_anomaly_detection",
-      "target": "algorithm:IsolationForest",
-      "edge_type": "USES_ALGORITHM"
-    },
-    {
-      "source": "capability:lof_high_dim:Industrial_sensor_anomaly_detection",
-      "target": "metric:pr_auc",
-      "edge_type": "EVALUATED_BY"
-    },
-    {
-      "source": "capability:lof_high_dim:Industrial_sensor_anomaly_detection",
-      "target": "dependency:scikit-learn",
-      "edge_type": "REQUIRES"
-    },
-    {
-      "source": "capability:lof_high_dim:Industrial_sensor_anomaly_detection",
-      "target": "lesson:lof_high_dim:Always_use_PR-AUC_for_imbalanced_anomaly_detection",
-      "edge_type": "HAS_LESSON"
-    },
-    {
-      "source": "capability:ocsvm_tuning:Industrial_sensor_anomaly_detection",
-      "target": "algorithm:IsolationForest",
-      "edge_type": "USES_ALGORITHM"
-    },
-    {
-      "source": "capability:ocsvm_tuning:Industrial_sensor_anomaly_detection",
-      "target": "metric:pr_auc",
-      "edge_type": "EVALUATED_BY"
-    },
-    {
-      "source": "capability:ocsvm_tuning:Industrial_sensor_anomaly_detection",
-      "target": "dependency:scikit-learn",
-      "edge_type": "REQUIRES"
-    },
-    {
-      "source": "capability:ocsvm_tuning:Industrial_sensor_anomaly_detection",
-      "target": "lesson:ocsvm_tuning:Always_use_PR-AUC_for_imbalanced_anomaly_detection",
-      "edge_type": "HAS_LESSON"
+      "source": "validationrun:task_20260717_090616_d81ac910:v2",
+      "target": "failurecase:task_20260717_090616_d81ac910:v2",
+      "edge_type": "CAUSED_LESSON"
     }
   ]
 }

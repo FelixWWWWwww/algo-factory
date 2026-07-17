@@ -1,0 +1,7 @@
+task_type: anomaly_detection
+required_metrics: [pr_auc, f1, precision, recall]
+thresholds:
+  pr_auc: 0.60      # 极不平衡放宽；LOF/OCSVM 达不到会触发修复→沉淀 FailureCase
+  f1: 0.40
+required_signature: "run(data_path: str) -> dict"
+timeout_sec: 60

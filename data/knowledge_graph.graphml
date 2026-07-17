@@ -1,225 +1,78 @@
 <?xml version='1.0' encoding='utf-8'?>
-<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
-  <key id="d21" for="edge" attr.name="edge_type" attr.type="string" />
-  <key id="d20" for="node" attr.name="mitigation" attr.type="string" />
-  <key id="d19" for="node" attr.name="severity" attr.type="string" />
-  <key id="d18" for="node" attr.name="affected_scenario" attr.type="string" />
-  <key id="d17" for="node" attr.name="root_cause" attr.type="string" />
-  <key id="d16" for="node" attr.name="source_document" attr.type="string" />
-  <key id="d15" for="node" attr.name="priority" attr.type="string" />
-  <key id="d14" for="node" attr.name="affected_algorithms" attr.type="string" />
-  <key id="d13" for="node" attr.name="title" attr.type="string" />
-  <key id="d12" for="node" attr.name="reason" attr.type="string" />
-  <key id="d11" for="node" attr.name="version_requirement" attr.type="string" />
-  <key id="d10" for="node" attr.name="module" attr.type="string" />
-  <key id="d9" for="node" attr.name="min_threshold" attr.type="double" />
-  <key id="d8" for="node" attr.name="ideal_value" attr.type="double" />
-  <key id="d7" for="node" attr.name="task_types" attr.type="string" />
-  <key id="d6" for="node" attr.name="success_rate" attr.type="double" />
-  <key id="d5" for="node" attr.name="domain" attr.type="string" />
-  <key id="d4" for="node" attr.name="task_type" attr.type="string" />
-  <key id="d3" for="node" attr.name="algorithm" attr.type="string" />
-  <key id="d2" for="node" attr.name="description" attr.type="string" />
-  <key id="d1" for="node" attr.name="name" attr.type="string" />
-  <key id="d0" for="node" attr.name="type" attr.type="string" />
-  <graph edgedefault="directed">
-    <node id="capability:failure_case_accuracy:Industrial_sensor_anomaly_detection">
-      <data key="d0">Capability</data>
-      <data key="d1">Industrial sensor anomaly detection</data>
-      <data key="d2">在工业传感器数据上识别异常样本，适用于低标签或无标签场景。</data>
-      <data key="d3">IsolationForest</data>
-      <data key="d4">anomaly_detection</data>
-      <data key="d5">industrial_sensors</data>
-      <data key="d6">0.0</data>
-    </node>
-    <node id="algorithm:IsolationForest">
-      <data key="d0">Algorithm</data>
-      <data key="d1">IsolationForest</data>
-      <data key="d2">IsolationForest algorithm</data>
-      <data key="d7">["anomaly_detection"]</data>
-    </node>
-    <node id="metric:pr_auc">
-      <data key="d0">Metric</data>
-      <data key="d1">pr_auc</data>
-      <data key="d2">用于评估极度不平衡异常检测任务的主指标。</data>
-      <data key="d8">1.0</data>
-      <data key="d9">0.6</data>
-    </node>
-    <node id="dependency:scikit-learn">
-      <data key="d0">Dependency</data>
-      <data key="d1">scikit-learn</data>
-      <data key="d10">sklearn.ensemble.IsolationForest</data>
-      <data key="d11">&gt;=1.0</data>
-      <data key="d12">提供 IsolationForest 等核心异常检测实现。</data>
-    </node>
-    <node id="lesson:failure_case_accuracy:Always_use_PR-AUC_for_imbalanced_anomaly_detection">
-      <data key="d0">Lesson</data>
-      <data key="d13">Always use PR-AUC for imbalanced anomaly detection</data>
-      <data key="d2">当异常样本占比很低时，PR-AUC 比 accuracy 更能反映模型效果。</data>
-      <data key="d14">["all"]</data>
-      <data key="d15">high</data>
-      <data key="d16">failure_case_accuracy</data>
-    </node>
-    <node id="failure_case:using_accuracy_on_imbalanced_data">
-      <data key="d0">FailureCase</data>
-      <data key="d1">using accuracy on imbalanced data</data>
-      <data key="d2">在极度不平衡数据上使用 accuracy 会掩盖异常样本的召回问题。</data>
-      <data key="d17">accuracy 受正常样本主导，无法反映异常检测效果。</data>
-      <data key="d18">anomaly ratio &lt; 5%</data>
-      <data key="d19">high</data>
-      <data key="d20">改用 PR-AUC、Recall 和 F1 作为主指标。</data>
-      <data key="d16">ocsvm_tuning</data>
-    </node>
-    <node id="lesson:using_accuracy_on_imbalanced_data:mitigation">
-      <data key="d0">Lesson</data>
-      <data key="d13">Avoid: using accuracy on imbalanced data</data>
-      <data key="d2">改用 PR-AUC、Recall 和 F1 作为主指标。</data>
-      <data key="d14">["all"]</data>
-      <data key="d15">high</data>
-      <data key="d16">ocsvm_tuning</data>
-    </node>
-    <node id="capability:feature_engineering_anomaly:Industrial_sensor_anomaly_detection">
-      <data key="d0">Capability</data>
-      <data key="d1">Industrial sensor anomaly detection</data>
-      <data key="d2">在工业传感器数据上识别异常样本，适用于低标签或无标签场景。</data>
-      <data key="d3">IsolationForest</data>
-      <data key="d4">anomaly_detection</data>
-      <data key="d5">industrial_sensors</data>
-      <data key="d6">0.0</data>
-    </node>
-    <node id="lesson:feature_engineering_anomaly:Always_use_PR-AUC_for_imbalanced_anomaly_detection">
-      <data key="d0">Lesson</data>
-      <data key="d13">Always use PR-AUC for imbalanced anomaly detection</data>
-      <data key="d2">当异常样本占比很低时，PR-AUC 比 accuracy 更能反映模型效果。</data>
-      <data key="d14">["all"]</data>
-      <data key="d15">high</data>
-      <data key="d16">feature_engineering_anomaly</data>
-    </node>
-    <node id="capability:iforest_sensor_experience:Industrial_sensor_anomaly_detection">
-      <data key="d0">Capability</data>
-      <data key="d1">Industrial sensor anomaly detection</data>
-      <data key="d2">在工业传感器数据上识别异常样本，适用于低标签或无标签场景。</data>
-      <data key="d3">IsolationForest</data>
-      <data key="d4">anomaly_detection</data>
-      <data key="d5">industrial_sensors</data>
-      <data key="d6">0.0</data>
-    </node>
-    <node id="lesson:iforest_sensor_experience:Always_use_PR-AUC_for_imbalanced_anomaly_detection">
-      <data key="d0">Lesson</data>
-      <data key="d13">Always use PR-AUC for imbalanced anomaly detection</data>
-      <data key="d2">当异常样本占比很低时，PR-AUC 比 accuracy 更能反映模型效果。</data>
-      <data key="d14">["all"]</data>
-      <data key="d15">high</data>
-      <data key="d16">iforest_sensor_experience</data>
-    </node>
-    <node id="capability:lof_high_dim:Industrial_sensor_anomaly_detection">
-      <data key="d0">Capability</data>
-      <data key="d1">Industrial sensor anomaly detection</data>
-      <data key="d2">在工业传感器数据上识别异常样本，适用于低标签或无标签场景。</data>
-      <data key="d3">IsolationForest</data>
-      <data key="d4">anomaly_detection</data>
-      <data key="d5">industrial_sensors</data>
-      <data key="d6">0.0</data>
-    </node>
-    <node id="lesson:lof_high_dim:Always_use_PR-AUC_for_imbalanced_anomaly_detection">
-      <data key="d0">Lesson</data>
-      <data key="d13">Always use PR-AUC for imbalanced anomaly detection</data>
-      <data key="d2">当异常样本占比很低时，PR-AUC 比 accuracy 更能反映模型效果。</data>
-      <data key="d14">["all"]</data>
-      <data key="d15">high</data>
-      <data key="d16">lof_high_dim</data>
-    </node>
-    <node id="capability:ocsvm_tuning:Industrial_sensor_anomaly_detection">
-      <data key="d0">Capability</data>
-      <data key="d1">Industrial sensor anomaly detection</data>
-      <data key="d2">在工业传感器数据上识别异常样本，适用于低标签或无标签场景。</data>
-      <data key="d3">IsolationForest</data>
-      <data key="d4">anomaly_detection</data>
-      <data key="d5">industrial_sensors</data>
-      <data key="d6">0.0</data>
-    </node>
-    <node id="lesson:ocsvm_tuning:Always_use_PR-AUC_for_imbalanced_anomaly_detection">
-      <data key="d0">Lesson</data>
-      <data key="d13">Always use PR-AUC for imbalanced anomaly detection</data>
-      <data key="d2">当异常样本占比很低时，PR-AUC 比 accuracy 更能反映模型效果。</data>
-      <data key="d14">["all"]</data>
-      <data key="d15">high</data>
-      <data key="d16">ocsvm_tuning</data>
-    </node>
-    <edge source="capability:failure_case_accuracy:Industrial_sensor_anomaly_detection" target="algorithm:IsolationForest" id="0">
-      <data key="d21">USES_ALGORITHM</data>
-    </edge>
-    <edge source="capability:failure_case_accuracy:Industrial_sensor_anomaly_detection" target="metric:pr_auc" id="0">
-      <data key="d21">EVALUATED_BY</data>
-    </edge>
-    <edge source="capability:failure_case_accuracy:Industrial_sensor_anomaly_detection" target="dependency:scikit-learn" id="0">
-      <data key="d21">REQUIRES</data>
-    </edge>
-    <edge source="capability:failure_case_accuracy:Industrial_sensor_anomaly_detection" target="lesson:failure_case_accuracy:Always_use_PR-AUC_for_imbalanced_anomaly_detection" id="0">
-      <data key="d21">HAS_LESSON</data>
-    </edge>
-    <edge source="failure_case:using_accuracy_on_imbalanced_data" target="lesson:using_accuracy_on_imbalanced_data:mitigation" id="0">
-      <data key="d21">CAUSED_LESSON</data>
-    </edge>
-    <edge source="failure_case:using_accuracy_on_imbalanced_data" target="lesson:using_accuracy_on_imbalanced_data:mitigation" id="1">
-      <data key="d21">CAUSED_LESSON</data>
-    </edge>
-    <edge source="failure_case:using_accuracy_on_imbalanced_data" target="lesson:using_accuracy_on_imbalanced_data:mitigation" id="2">
-      <data key="d21">CAUSED_LESSON</data>
-    </edge>
-    <edge source="failure_case:using_accuracy_on_imbalanced_data" target="lesson:using_accuracy_on_imbalanced_data:mitigation" id="3">
-      <data key="d21">CAUSED_LESSON</data>
-    </edge>
-    <edge source="failure_case:using_accuracy_on_imbalanced_data" target="lesson:using_accuracy_on_imbalanced_data:mitigation" id="4">
-      <data key="d21">CAUSED_LESSON</data>
-    </edge>
-    <edge source="capability:feature_engineering_anomaly:Industrial_sensor_anomaly_detection" target="algorithm:IsolationForest" id="0">
-      <data key="d21">USES_ALGORITHM</data>
-    </edge>
-    <edge source="capability:feature_engineering_anomaly:Industrial_sensor_anomaly_detection" target="metric:pr_auc" id="0">
-      <data key="d21">EVALUATED_BY</data>
-    </edge>
-    <edge source="capability:feature_engineering_anomaly:Industrial_sensor_anomaly_detection" target="dependency:scikit-learn" id="0">
-      <data key="d21">REQUIRES</data>
-    </edge>
-    <edge source="capability:feature_engineering_anomaly:Industrial_sensor_anomaly_detection" target="lesson:feature_engineering_anomaly:Always_use_PR-AUC_for_imbalanced_anomaly_detection" id="0">
-      <data key="d21">HAS_LESSON</data>
-    </edge>
-    <edge source="capability:iforest_sensor_experience:Industrial_sensor_anomaly_detection" target="algorithm:IsolationForest" id="0">
-      <data key="d21">USES_ALGORITHM</data>
-    </edge>
-    <edge source="capability:iforest_sensor_experience:Industrial_sensor_anomaly_detection" target="metric:pr_auc" id="0">
-      <data key="d21">EVALUATED_BY</data>
-    </edge>
-    <edge source="capability:iforest_sensor_experience:Industrial_sensor_anomaly_detection" target="dependency:scikit-learn" id="0">
-      <data key="d21">REQUIRES</data>
-    </edge>
-    <edge source="capability:iforest_sensor_experience:Industrial_sensor_anomaly_detection" target="lesson:iforest_sensor_experience:Always_use_PR-AUC_for_imbalanced_anomaly_detection" id="0">
-      <data key="d21">HAS_LESSON</data>
-    </edge>
-    <edge source="capability:lof_high_dim:Industrial_sensor_anomaly_detection" target="algorithm:IsolationForest" id="0">
-      <data key="d21">USES_ALGORITHM</data>
-    </edge>
-    <edge source="capability:lof_high_dim:Industrial_sensor_anomaly_detection" target="metric:pr_auc" id="0">
-      <data key="d21">EVALUATED_BY</data>
-    </edge>
-    <edge source="capability:lof_high_dim:Industrial_sensor_anomaly_detection" target="dependency:scikit-learn" id="0">
-      <data key="d21">REQUIRES</data>
-    </edge>
-    <edge source="capability:lof_high_dim:Industrial_sensor_anomaly_detection" target="lesson:lof_high_dim:Always_use_PR-AUC_for_imbalanced_anomaly_detection" id="0">
-      <data key="d21">HAS_LESSON</data>
-    </edge>
-    <edge source="capability:ocsvm_tuning:Industrial_sensor_anomaly_detection" target="algorithm:IsolationForest" id="0">
-      <data key="d21">USES_ALGORITHM</data>
-    </edge>
-    <edge source="capability:ocsvm_tuning:Industrial_sensor_anomaly_detection" target="metric:pr_auc" id="0">
-      <data key="d21">EVALUATED_BY</data>
-    </edge>
-    <edge source="capability:ocsvm_tuning:Industrial_sensor_anomaly_detection" target="dependency:scikit-learn" id="0">
-      <data key="d21">REQUIRES</data>
-    </edge>
-    <edge source="capability:ocsvm_tuning:Industrial_sensor_anomaly_detection" target="lesson:ocsvm_tuning:Always_use_PR-AUC_for_imbalanced_anomaly_detection" id="0">
-      <data key="d21">HAS_LESSON</data>
-    </edge>
-  </graph>
-</graphml>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd"><key id="d9" for="edge" attr.name="edge_type" attr.type="string"/>
+<key id="d8" for="node" attr.name="reason" attr.type="string"/>
+<key id="d7" for="node" attr.name="name" attr.type="string"/>
+<key id="d6" for="node" attr.name="f1" attr.type="double"/>
+<key id="d5" for="node" attr.name="pr_auc" attr.type="double"/>
+<key id="d4" for="node" attr.name="status" attr.type="string"/>
+<key id="d3" for="node" attr.name="timestamp" attr.type="string"/>
+<key id="d2" for="node" attr.name="target" attr.type="string"/>
+<key id="d1" for="node" attr.name="task_type" attr.type="string"/>
+<key id="d0" for="node" attr.name="type" attr.type="string"/>
+<graph edgedefault="directed"><node id="capability:anomaly_detection">
+  <data key="d0">Capability</data>
+  <data key="d1">anomaly_detection</data>
+  <data key="d2">识别设备传感器读数中的离群点</data>
+</node>
+<node id="validationrun:task_20260717_090616_d81ac910:v1">
+  <data key="d0">ValidationRun</data>
+  <data key="d1">anomaly_detection</data>
+  <data key="d3">2026-07-17T09:06:18.025261</data>
+  <data key="d4">passed</data>
+  <data key="d5">1.0</data>
+  <data key="d6">0.5714</data>
+</node>
+<node id="algorithm:Isolation Forest 方案">
+  <data key="d0">Algorithm</data>
+  <data key="d7">Isolation Forest 方案</data>
+</node>
+<node id="validationrun:task_20260717_090616_d81ac910:v2">
+  <data key="d0">ValidationRun</data>
+  <data key="d1">anomaly_detection</data>
+  <data key="d3">2026-07-17T09:06:19.738474</data>
+  <data key="d4">failed</data>
+  <data key="d5">0.0587</data>
+  <data key="d6">0.0429</data>
+</node>
+<node id="algorithm:LOF 方案">
+  <data key="d0">Algorithm</data>
+  <data key="d7">LOF 方案</data>
+</node>
+<node id="failurecase:task_20260717_090616_d81ac910:v2">
+  <data key="d0">FailureCase</data>
+  <data key="d8">pr_auc=0.0587 &lt; 阈值 0.6</data>
+</node>
+<node id="validationrun:task_20260717_090616_d81ac910:v3">
+  <data key="d0">ValidationRun</data>
+  <data key="d1">anomaly_detection</data>
+  <data key="d3">2026-07-17T09:06:21.035774</data>
+  <data key="d4">passed</data>
+  <data key="d5">0.8286</data>
+  <data key="d6">0.7692</data>
+</node>
+<node id="algorithm:One-Class SVM 方案">
+  <data key="d0">Algorithm</data>
+  <data key="d7">One-Class SVM 方案</data>
+</node>
+<edge source="capability:anomaly_detection" target="validationrun:task_20260717_090616_d81ac910:v1" id="0">
+  <data key="d9">VALIDATED_IN</data>
+</edge>
+<edge source="capability:anomaly_detection" target="algorithm:Isolation Forest 方案" id="0">
+  <data key="d9">USES_ALGORITHM</data>
+</edge>
+<edge source="capability:anomaly_detection" target="validationrun:task_20260717_090616_d81ac910:v2" id="0">
+  <data key="d9">VALIDATED_IN</data>
+</edge>
+<edge source="capability:anomaly_detection" target="algorithm:LOF 方案" id="0">
+  <data key="d9">USES_ALGORITHM</data>
+</edge>
+<edge source="capability:anomaly_detection" target="validationrun:task_20260717_090616_d81ac910:v3" id="0">
+  <data key="d9">VALIDATED_IN</data>
+</edge>
+<edge source="capability:anomaly_detection" target="algorithm:One-Class SVM 方案" id="0">
+  <data key="d9">USES_ALGORITHM</data>
+</edge>
+<edge source="validationrun:task_20260717_090616_d81ac910:v2" target="failurecase:task_20260717_090616_d81ac910:v2" id="0">
+  <data key="d9">CAUSED_LESSON</data>
+</edge>
+</graph></graphml>

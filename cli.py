@@ -72,43 +72,25 @@ def status(task_id: str = typer.Argument(..., help="Task ID")):
         return
 
     import json
-    data = json.loads(task_file.read_text())
+    data = json.loads(task_file.read_text(encoding="utf-8"))
     print(f"\n📋 Task {task_id} 状态：")
     print(f"   Query: {data.get('user_query')}")
     print(f"   Best Model: {data.get('best_model')}")
     print(f"   Metrics: {data.get('metrics')}")
 
 
-@app.command()
+@app.command("run-dag")
 def run_dag(
-        data_path: str = typer.Argument(..., help="CSV 数据路径"),
-        mock: bool = typer.Option(False, "--mock/--real", help="Mock vs 真实 LLM"),
+        query: str = typer.Argument("对工业传感器数据进行异常检测", help="任务描述"),
+        mock: bool = typer.Option(True, "--mock/--real"),
 ):
-    """
-    运行 DAG Pipeline（Day 2+）
-
-    示例：
-    \b
-    # 真实模式（有 API Key）
-    python cli.py run-dag data/synth/sensor_anomaly.csv --real
-
-    \b
-    # Mock 模式
-    python cli.py run-dag data/synth/sensor_anomaly.csv --mock
-    """
+    """以 DAG 编排方式运行（与 run 等价，保留命令名兼容）。"""
     _ensure_utf8_stdout()
-    from factory.dag_pipeline import DAGPipeline
+    pipeline = Pipeline(use_mock=mock)
+    state = pipeline.run(query)
+    print(f"\n✅ 完成：best={state.best_model}  metrics={state.final_metrics}")
+    print(f"   日志：{pipeline.dump_state(state)}")
 
-    pipeline = DAGPipeline(use_mock=mock)
-    state = pipeline.run(data_path)
-
-    output_file = pipeline.dump_state(state)
-
-    print(f"\n✅ DAG Pipeline 完成")
-    print(f"   最优模型: {state.best_model_name}")
-    if state.eval_metrics:
-        print(f"   PR-AUC: {state.eval_metrics.get('pr_auc', 'N/A')}")
-    print(f"   结果: {output_file}")
 
 if __name__ == "__main__":
     app()

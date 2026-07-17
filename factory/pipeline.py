@@ -1,134 +1,155 @@
-"""
-factory/pipeline.py
-异常检测任务的执行流水线（状态机）
-"""
-
-import uuid
-from datetime import datetime
+# factory/pipeline.py
+"""主编排：能力理解→检索→规划→生成→沙箱验证→修复→择优→图谱回写→报告。"""
+from __future__ import annotations
+import os, json, logging
 from pathlib import Path
-from factory.config import get_llm_client
+
 from factory.state import TaskState
-from factory.llm.client import LLMClient
-from factory.llm.mock_client import MockClient
-from factory.agents.base import Agent
-from factory.agents.interpreter_agent import InterpreterAgent
-from factory.agents.retriever_agent import RetrieverAgent
-from factory.agents.planner_agent import PlannerAgent
-from factory.agents.coder_agent import CoderAgent
-from factory.agents.validator_agent import ValidatorAgent
+from factory.llm import MockClient
+from factory.agents import InterpreterAgent, RetrieverAgent, PlannerAgent, CoderAgent
 from factory.agents.curator_agent import CuratorAgent
+from factory.agents.coder_agent import CoderAgent as _Coder, _is_valid
+from factory.graph.store import GraphStore
+from factory.sandbox.validator import validate, load_config
+from factory.nodes import make_synthetic_dataset
+from factory.report import generate_report
+
+logger = logging.getLogger(__name__)
 
 
 class Pipeline:
-    """
-    异常检测算法工厂的执行流水线。
-
-    执行流程（Day 1 Mock 模式）：
-    1. Interpreter：自然语言需求 → 结构化 TaskCard
-    2. Retriever：TaskCard → 检索知识图谱 → retrieved_context
-    3. Planner：TaskCard + context → 多个候选方案 plans
-    4. Coder：plans → 生成代码（每个方案一份）
-    5. Validator：代码 → 执行 + 评估（仅 Mock 返回假结果）
-    6. Curator：验证结果 → 图谱回写（Day 3 才真实回写）
-
-    执行逻辑：
-    - Day 1 Mock：各 Agent 返回预定义的假数据
-    - Day 2-3 真实：各 Agent 接通真实 LLM + 模型 + 图谱
-    """
-
-    def __init__(self, use_mock: bool = True):
+    def __init__(self, use_mock: bool = True, max_retries: int = 2, work_dir: str = "data"):
         self.use_mock = use_mock
+        self.max_retries = max_retries
+        self.work_dir = work_dir
+        self.llm = self._make_llm()
+        self.graph_store = GraphStore()
 
-        # 初始化 LLM 客户端
-        if use_mock:
-            self.llm = MockClient()
-        else:
-            self.llm = get_llm_client()
-
-        # 初始化各 Agent
-        self.agents: dict[str, Agent] = {
-            "interpreter": InterpreterAgent(llm_client=self.llm),
-            "retriever": RetrieverAgent(llm_client=self.llm),
-            "planner": PlannerAgent(llm_client=self.llm),
-            "coder": CoderAgent(llm_client=self.llm),
-            "validator": ValidatorAgent(llm_client=self.llm),
-            "curator": CuratorAgent(llm_client=self.llm),
-        }
-
-    def run(self, user_query: str) -> TaskState:
-        """
-        主执行方法。
-
-        Args:
-            user_query: 用户输入的自然语言需求
-                       如 "对工业传感器数据进行异常检测"
-
-        Returns:
-            state: 最终的 TaskState，包含所有中间结果
-        """
-
-        # 初始化状态
-        state = TaskState(
-            task_id=str(uuid.uuid4())[:8],
-            user_query=user_query,
-            _use_mock=self.use_mock
+    def _make_llm(self):
+        if self.use_mock:
+            return MockClient()
+        from factory.llm import OpenAIClient
+        return OpenAIClient(
+            api_key=os.getenv("OPENAI_API_KEY"),
+            base_url=os.getenv("OPENAI_BASE_URL"),
+            model=os.getenv("OPENAI_MODEL", "gpt-3.5-turbo"),
         )
 
-        print(f"\n🚀 任务启动")
-        print(f"   Task ID: {state.task_id}")
-        print(f"   Query: {user_query}")
-        print(f"   Mock 模式: {self.use_mock}")
+    # ───────────────────────── 主流程 ─────────────────────────
+    def run(self, query: str, data_path: str | None = None) -> TaskState:
+        state = TaskState(user_query=query)
+        state._use_mock = self.use_mock
 
-        # ===== 执行流水线 =====
+        # a→c 理解 / 检索 / 规划
+        state = InterpreterAgent(self.llm).run(state)
+        state = RetrieverAgent(self.llm, graph_store=self.graph_store).run(state)
+        state = PlannerAgent(self.llm).run(state)
 
-        # Step 1: Interpreter
-        state = self.agents["interpreter"].run(state)
+        # 数据（未提供则合成）
+        data_path = data_path or self._ensure_data(state)
 
-        # Step 2: Retriever
-        state = self.agents["retriever"].run(state)
+        # d 生成代码
+        state = CoderAgent(self.llm, out_dir=os.path.join(self.work_dir, "examples")).run(state)
 
-        # Step 3: Planner
-        state = self.agents["planner"].run(state)
+        # e→f 逐方案：验证 + 修复循环
+        config = load_config()
+        for plan, cv in zip(state.plans, state.code_versions):
+            report = self._validate_with_repair(plan, cv, data_path, config, state)
+            status = "passed" if report.status == "passed" else "failed"
+            state.add_validation_result(
+                cv.version, plan.name, status,
+                metrics=report.metrics,
+                error_message=None if status == "passed" else report.message,
+            )
+            plan.actual_metric = (report.metrics or {}).get("pr_auc")
+            plan.validation_status = "success" if status == "passed" else "failed"
 
-        # Step 4: Coder（可能生成多份代码）
-        state = self.agents["coder"].run(state)
+        # 择优（T3.5）
+        self._select_best(state)
 
-        # Step 5: Validator（执行代码，获取指标）
-        state = self.agents["validator"].run(state)
+        # g 图谱回写（T3.6）
+        state = CuratorAgent(
+            self.llm, graph_store=self.graph_store,
+            graph_path=os.path.join(self.work_dir, "knowledge_graph.json"),
+        ).run(state)
 
-        # Step 6: Curator（图谱回写）
-        state = self.agents["curator"].run(state)
-
-        # ===== 任务完成 =====
+        # 报告（T3.7）
         state.final_status = "completed"
-
-        print(f"\n{'=' * 60}")
-        print(f"✅ 所有 Agent 执行完成")
-        print(f"{'=' * 60}")
-        print(f"\n最终结果摘要：")
-        print(f"  - Task ID: {state.task_id}")
-        print(f"  - Best Model: {state.best_model}")
-        print(f"  - PR-AUC: {state.metrics.get('pr_auc', 'N/A')}")
-        error_count = 0
-        for record in state.error_history:
-            status = record.get("status") if isinstance(record, dict) else getattr(record, "status", None)
-            if status == "error":
-                error_count += 1
-        print(f"  - 错误数: {error_count}")
-
+        try:
+            generate_report(state)
+        except Exception as e:
+            logger.warning(f"[pipeline] 报告生成失败: {e}")
         return state
 
-    def dump_state(self, state: TaskState, output_dir: str = "logs"):
-        """
-        将 TaskState 序列化到 JSON 文件。
-        """
-        Path(output_dir).mkdir(exist_ok=True)
+    # ───────────────────────── 子步骤 ─────────────────────────
+    def _ensure_data(self, state: TaskState) -> str:
+        d = os.path.join(self.work_dir, "synth")
+        os.makedirs(d, exist_ok=True)
+        path = os.path.join(d, f"{state.task_id}.csv")
+        ratio = min(max(state.contamination or 0.03, 0.01), 0.05)
+        make_synthetic_dataset(1500, 6, ratio, save_path=path)
+        return path
 
-        output_file = Path(output_dir) / f"{state.task_id}.json"
+    def _validate_with_repair(self, plan, cv, data_path, config, state):
+        """T3.4：验证失败 → 带负面约束重生成 → 再验证，最多 max_retries 轮。"""
+        report = validate(cv.code, data_path, config)
+        retries = 0
+        while report.status != "passed" and retries < self.max_retries:
+            retries += 1
+            logger.info(f"[repair] {plan.algorithm} 第 {retries} 轮修复（{report.failed_layer}）")
+            cv.validation_error = report.message
+            cv.code = self._repair(plan, report)
+            report = validate(cv.code, data_path, config)
+        cv.validation_metrics = report.metrics
+        return report
 
-        # TaskState 是 Pydantic BaseModel，可直接 .model_dump_json()
-        json_str = state.model_dump_json(indent=2, exclude_none=True)
-        output_file.write_text(json_str, encoding="utf-8")
+    def _repair(self, plan, report) -> str:
+        """带负面约束提示 Coder 重生成；不可用时退回模板。"""
+        try:
+            prompt = (
+                f"上一版 {plan.algorithm} 异常检测代码(代码)验证失败："
+                f"[{report.failed_layer}] {report.message}。请修复并避免相同错误，"
+                "务必保留 def run(data_path)->dict 与 RESULT_JSON 输出。"
+            )
+            code = self.llm.chat([{"role": "user", "content": prompt}]).get("message", "")
+            if code and "def run(" in code and "RESULT_JSON" in code and _is_valid(code):
+                return code
+        except Exception:
+            pass
+        return _Coder(self.llm)._template(plan.algorithm, plan.contamination or 0.05)
 
-        print(f"\n📝 状态已保存: {output_file}")
-        return output_file
+    def _select_best(self, state: TaskState):
+        pairs = list(zip(state.plans, state.validation_results))
+        passed = [(p, vr) for p, vr in pairs if vr.status == "passed"]
+        pool = passed or pairs
+        if not pool:
+            return
+        best_plan, best_vr = max(pool, key=lambda t: (t[1].metrics or {}).get("pr_auc", -1))
+        best_plan.is_best = True
+        state.best_model = best_plan.algorithm
+        state.metrics = best_vr.metrics or {}
+        state.final_metrics = {k: v for k, v in (best_vr.metrics or {}).items()
+                               if not str(k).startswith("accuracy")}
+        for cv in state.code_versions:
+            if cv.plan_name == best_plan.name:
+                state.final_code = cv.code
+
+    # ───────────────────────── 落盘 ─────────────────────────
+    def dump_state(self, state: TaskState, output_dir: str = "logs") -> str:
+        """只序列化 JSON-safe 字段（跳过 raw_df / 模型 / ndarray）。"""
+        os.makedirs(output_dir, exist_ok=True)
+        safe = {
+            "task_id": state.task_id,
+            "user_query": state.user_query,
+            "task_card": state.task_card.model_dump() if hasattr(state.task_card, "model_dump") else {},
+            "plans": [p.model_dump() for p in state.plans],
+            "validation_results": [vr.model_dump() for vr in state.validation_results],
+            "best_model": state.best_model,
+            "final_metrics": state.final_metrics,
+            "eda_summary": state.eda_summary,
+            "train_info": state.train_info,
+            "final_status": state.final_status,
+        }
+        path = os.path.join(output_dir, f"{state.task_id}.json")
+        Path(path).write_text(json.dumps(safe, ensure_ascii=False, indent=2), encoding="utf-8")
+        return path
