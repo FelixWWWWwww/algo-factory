@@ -1,13 +1,17 @@
 """
 T2.4 Planner Agent：TaskCard + 检索上下文 → 多个候选方案(Plan)
 
-产出 3 个候选方案（IForest / LOF / OCSVM），供后续多方案自动比较。
-可选调用 LLM 补充自然语言 rationale（命中"自然语言解释设计依据"加分项）。
+闭环学习的"行动侧"：若某算法在本场景历史失败（来自 retrieved_context），
+则将其**降级并排到最后**，rationale 明确标注"历史失败已规避"，
+从而体现"从失败中学习、下次规避"。
 """
-
+import logging
 from factory.agents.base import Agent
 from factory.agents._util import parse_json
 from factory.state import TaskState, Plan
+from factory.llm.prompt_manager import get_prompt_manager
+
+logger = logging.getLogger(__name__)
 
 # (name, algorithm, expected_pr_auc, rationale, pipeline_steps)
 _CANDIDATES = [
@@ -22,63 +26,69 @@ _CANDIDATES = [
      ["load_data", "eda", "preprocess(StandardScaler)", "train_ocsvm", "evaluate(PR-AUC)"]),
 ]
 
-from factory.llm.prompt_manager import get_prompt_manager
-
 
 class PlannerAgent(Agent):
     def __init__(self, llm_client=None):
         super().__init__(name="Planner", llm_client=llm_client)
-        self.prompt_mgr = get_prompt_manager()
+        try:
+            self.prompt_mgr = get_prompt_manager()
+        except Exception as e:
+            logger.warning(f"[planner] prompt_manager 初始化失败，禁用 LLM 理由: {e}")
+            self.prompt_mgr = None
 
     def _run(self, state: TaskState) -> TaskState:
-        # ... 基础方案生成 ...
-
-        # 用 LLM 生成补充理由
-        llm_rationale = self._llm_rationale(state)
-
-        # 写入 plans
-        # ...
+        contamination = state.contamination or 0.05
+        failed_algos = self._known_failures(state)      # 历史失败算法集合
+        llm_note = self._llm_rationale(state)
+        built = []
+        for name, algo, exp, rat, steps in _CANDIDATES:
+            rationale = rat + (f" [LLM补充] {llm_note}" if llm_note else "")
+            demoted = algo in failed_algos
+            if demoted:
+                rationale = "⚠️ 历史失败已规避（本场景该算法曾验证不达标，降级排后）：" + rationale
+            built.append((demoted, Plan(
+                name=name, algorithm=algo, pipeline_steps=list(steps),
+                rationale=rationale, expected_metric=exp, contamination=contamination,
+            )))
+        # 历史失败的算法排到最后（降级）；未失败的优先
+        built.sort(key=lambda t: t[0])
+        state.plans = [p for _, p in built]
+        if failed_algos:
+            logger.info(f"[planner] 依据图谱经验规避/降级算法: {sorted(failed_algos)}")
         return state
 
-    def _llm_rationale(self, state: TaskState) -> str:
-        """用 LLM 补充理由"""
-        if self.llm_client is None:
-            return ""
-
+    def _known_failures(self, state: TaskState) -> set:
+        """从检索上下文提取本场景历史失败过的算法名。"""
+        out = set()
         try:
-            # 用 Jinja2 渲染 planner_prompt
+            for fc in state.retrieved_context.failure_cases:
+                a = fc.get("algorithm") if isinstance(fc, dict) else None
+                if a:
+                    out.add(a)
+        except Exception:
+            pass
+        return out
+
+    def _llm_rationale(self, state: TaskState) -> str:
+        if self.llm_client is None or self.prompt_mgr is None:
+            return ""
+        try:
+            df = getattr(state, "raw_df", None)
+            n_samples = len(df) if df is not None else 0
+            n_features = int(df.shape[1]) if df is not None else 0
             prompt = self.prompt_mgr.get_planner_prompt(
-                user_query=state.user_query,
-                n_samples=len(state.X_raw) if hasattr(state, 'X_raw') and state.X_raw is not None else 0,
-                n_features=state.X_raw.shape[1] if hasattr(state, 'X_raw') and state.X_raw is not None else 0,
+                user_query=state.user_query, n_samples=n_samples, n_features=n_features,
                 anomaly_ratio=state.anomaly_ratio or 0.0,
-                has_labels=state.y_raw is not None,
-                retrieved_context=str(state.retrieved_context)
+                has_labels=getattr(state, "y_true", None) is not None,
+                retrieved_context=str(state.retrieved_context),
             )
-
-            # 调用 LLM
-            response = self.llm_client.chat([
+            resp = self.llm_client.chat([
                 {"role": "system", "content": self.prompt_mgr.get_system_prompt()},
-                {"role": "user", "content": prompt}
+                {"role": "user", "content": prompt},
             ])
-
-            # 记录 LLM 调用
-            from factory.llm.logger import get_llm_logger
-            get_llm_logger().log_call(
-                agent_name="Planner",
-                prompt=prompt,
-                response=response.get("message", ""),
-                model=getattr(self.llm_client, 'model', 'unknown')
-            )
-
-            # 返回 rationale
-            from factory.agents._util import parse_json
-            data = parse_json(response.get("message", ""))
-            if isinstance(data, list) and len(data) > 0:
-                return str(data[0].get("rationale", "")).strip()
-
+            data = parse_json(resp.get("message", ""))
+            if isinstance(data, dict):
+                return str(data.get("rationale", "")).strip()
         except Exception as e:
-            logger.warning(f"[Planner] LLM 补充失败: {e}")
-
+            logger.warning(f"[planner] LLM 补充理由失败，忽略: {e}")
         return ""
-

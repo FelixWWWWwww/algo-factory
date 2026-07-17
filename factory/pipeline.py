@@ -11,7 +11,8 @@ from factory.agents.curator_agent import CuratorAgent
 from factory.agents.coder_agent import CoderAgent as _Coder, _is_valid
 from factory.graph.store import GraphStore
 from factory.sandbox.validator import validate, load_config
-from factory.nodes import make_synthetic_dataset
+from factory.nodes import (make_synthetic_dataset, data_ingestion_node, eda_node,
+                           preprocess_node, split_node, train_node, evaluate_node)
 from factory.report import generate_report
 
 logger = logging.getLogger(__name__)
@@ -24,16 +25,23 @@ class Pipeline:
         self.work_dir = work_dir
         self.llm = self._make_llm()
         self.graph_store = GraphStore()
+        # 加载已持久化的图谱：让本次运行能读到历史失败经验（闭环学习的关键）
+        self._graph_path = os.path.join(work_dir, "knowledge_graph.json")
+        if os.path.exists(self._graph_path):
+            try:
+                self.graph_store.load(self._graph_path)
+            except Exception as e:
+                logger.warning(f"[pipeline] 图谱加载失败，从空图开始: {e}")
 
     def _make_llm(self):
         if self.use_mock:
             return MockClient()
         from factory.llm import OpenAIClient
-        return OpenAIClient(
-            api_key=os.getenv("OPENAI_API_KEY"),
-            base_url=os.getenv("OPENAI_BASE_URL"),
-            model=os.getenv("OPENAI_MODEL", "gpt-3.5-turbo"),
-        )
+        # 不硬塞默认值：全部交给 OpenAIClient 的环境变量逻辑
+        #   api_key : DEEPSEEK_API_KEY -> OPENAI_API_KEY
+        #   base_url: OPENAI_BASE_URL  -> LLM_BASE_URL
+        #   model   : LLM_MODEL -> OPENAI_MODEL -> 默认 deepseek-v4-pro
+        return OpenAIClient()
 
     # ───────────────────────── 主流程 ─────────────────────────
     def run(self, query: str, data_path: str | None = None) -> TaskState:
@@ -66,6 +74,8 @@ class Pipeline:
 
         # 择优（T3.5）
         self._select_best(state)
+        # 富化报告：用最优算法跑一遍 node 流水线，填充 EDA/异常分数/Top-K
+        self._enrich_artifacts(state, data_path)
 
         # g 图谱回写（T3.6）
         state = CuratorAgent(
@@ -112,7 +122,8 @@ class Pipeline:
                 "务必保留 def run(data_path)->dict 与 RESULT_JSON 输出。"
             )
             code = self.llm.chat([{"role": "user", "content": prompt}]).get("message", "")
-            if code and "def run(" in code and "RESULT_JSON" in code and _is_valid(code):
+            if (code and "def run(" in code and "RESULT_JSON" in code
+                    and plan.algorithm in code and _is_valid(code)):
                 return code
         except Exception:
             pass
@@ -135,6 +146,26 @@ class Pipeline:
                 state.final_code = cv.code
 
     # ───────────────────────── 落盘 ─────────────────────────
+    def _enrich_artifacts(self, state: TaskState, data_path: str):
+        """用最优算法跑一遍 node 流水线，为报告填充 EDA 摘要 / 异常分数 / Top-K。
+        不覆盖沙箱择优的 final_metrics（结束后复位）。任何失败都吞掉，不影响主流程。"""
+        best_algo = state.best_model or "IsolationForest"
+        saved_final = dict(state.final_metrics or {})
+        try:
+            data_ingestion_node(state, data_path)
+            eda_node(state, self.llm)
+            preprocess_node(state, algorithm=best_algo)
+            split_node(state)
+            train_node(state, algorithm=best_algo)
+            evaluate_node(state)
+        except Exception as e:
+            logger.warning(f"[pipeline] 报告富化失败（不影响主流程）: {e}")
+        finally:
+            state.raw_df = None
+            state.trained_model = None
+            if saved_final:
+                state.final_metrics = saved_final
+
     def dump_state(self, state: TaskState, output_dir: str = "logs") -> str:
         """只序列化 JSON-safe 字段（跳过 raw_df / 模型 / ndarray）。"""
         os.makedirs(output_dir, exist_ok=True)

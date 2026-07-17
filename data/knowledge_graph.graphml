@@ -1,78 +1,196 @@
 <?xml version='1.0' encoding='utf-8'?>
-<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd"><key id="d9" for="edge" attr.name="edge_type" attr.type="string"/>
-<key id="d8" for="node" attr.name="reason" attr.type="string"/>
-<key id="d7" for="node" attr.name="name" attr.type="string"/>
-<key id="d6" for="node" attr.name="f1" attr.type="double"/>
-<key id="d5" for="node" attr.name="pr_auc" attr.type="double"/>
-<key id="d4" for="node" attr.name="status" attr.type="string"/>
-<key id="d3" for="node" attr.name="timestamp" attr.type="string"/>
-<key id="d2" for="node" attr.name="target" attr.type="string"/>
-<key id="d1" for="node" attr.name="task_type" attr.type="string"/>
-<key id="d0" for="node" attr.name="type" attr.type="string"/>
-<graph edgedefault="directed"><node id="capability:anomaly_detection">
-  <data key="d0">Capability</data>
-  <data key="d1">anomaly_detection</data>
-  <data key="d2">识别设备传感器读数中的离群点</data>
-</node>
-<node id="validationrun:task_20260717_090616_d81ac910:v1">
-  <data key="d0">ValidationRun</data>
-  <data key="d1">anomaly_detection</data>
-  <data key="d3">2026-07-17T09:06:18.025261</data>
-  <data key="d4">passed</data>
-  <data key="d5">1.0</data>
-  <data key="d6">0.5714</data>
-</node>
-<node id="algorithm:Isolation Forest 方案">
-  <data key="d0">Algorithm</data>
-  <data key="d7">Isolation Forest 方案</data>
-</node>
-<node id="validationrun:task_20260717_090616_d81ac910:v2">
-  <data key="d0">ValidationRun</data>
-  <data key="d1">anomaly_detection</data>
-  <data key="d3">2026-07-17T09:06:19.738474</data>
-  <data key="d4">failed</data>
-  <data key="d5">0.0587</data>
-  <data key="d6">0.0429</data>
-</node>
-<node id="algorithm:LOF 方案">
-  <data key="d0">Algorithm</data>
-  <data key="d7">LOF 方案</data>
-</node>
-<node id="failurecase:task_20260717_090616_d81ac910:v2">
-  <data key="d0">FailureCase</data>
-  <data key="d8">pr_auc=0.0587 &lt; 阈值 0.6</data>
-</node>
-<node id="validationrun:task_20260717_090616_d81ac910:v3">
-  <data key="d0">ValidationRun</data>
-  <data key="d1">anomaly_detection</data>
-  <data key="d3">2026-07-17T09:06:21.035774</data>
-  <data key="d4">passed</data>
-  <data key="d5">0.8286</data>
-  <data key="d6">0.7692</data>
-</node>
-<node id="algorithm:One-Class SVM 方案">
-  <data key="d0">Algorithm</data>
-  <data key="d7">One-Class SVM 方案</data>
-</node>
-<edge source="capability:anomaly_detection" target="validationrun:task_20260717_090616_d81ac910:v1" id="0">
-  <data key="d9">VALIDATED_IN</data>
-</edge>
-<edge source="capability:anomaly_detection" target="algorithm:Isolation Forest 方案" id="0">
-  <data key="d9">USES_ALGORITHM</data>
-</edge>
-<edge source="capability:anomaly_detection" target="validationrun:task_20260717_090616_d81ac910:v2" id="0">
-  <data key="d9">VALIDATED_IN</data>
-</edge>
-<edge source="capability:anomaly_detection" target="algorithm:LOF 方案" id="0">
-  <data key="d9">USES_ALGORITHM</data>
-</edge>
-<edge source="capability:anomaly_detection" target="validationrun:task_20260717_090616_d81ac910:v3" id="0">
-  <data key="d9">VALIDATED_IN</data>
-</edge>
-<edge source="capability:anomaly_detection" target="algorithm:One-Class SVM 方案" id="0">
-  <data key="d9">USES_ALGORITHM</data>
-</edge>
-<edge source="validationrun:task_20260717_090616_d81ac910:v2" target="failurecase:task_20260717_090616_d81ac910:v2" id="0">
-  <data key="d9">CAUSED_LESSON</data>
-</edge>
-</graph></graphml>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d11" for="edge" attr.name="edge_type" attr.type="string" />
+  <key id="d10" for="node" attr.name="content" attr.type="string" />
+  <key id="d9" for="node" attr.name="reason" attr.type="string" />
+  <key id="d8" for="node" attr.name="name" attr.type="string" />
+  <key id="d7" for="node" attr.name="f1" attr.type="double" />
+  <key id="d6" for="node" attr.name="pr_auc" attr.type="double" />
+  <key id="d5" for="node" attr.name="status" attr.type="string" />
+  <key id="d4" for="node" attr.name="timestamp" attr.type="string" />
+  <key id="d3" for="node" attr.name="algorithm" attr.type="string" />
+  <key id="d2" for="node" attr.name="target" attr.type="string" />
+  <key id="d1" for="node" attr.name="task_type" attr.type="string" />
+  <key id="d0" for="node" attr.name="type" attr.type="string" />
+  <graph edgedefault="directed">
+    <node id="capability:anomaly_detection">
+      <data key="d0">Capability</data>
+      <data key="d1">anomaly_detection</data>
+      <data key="d2">检测交易中的异常/欺诈样本</data>
+    </node>
+    <node id="validationrun:task_20260717_122332_65ee68ef:v1">
+      <data key="d0">ValidationRun</data>
+      <data key="d1">anomaly_detection</data>
+      <data key="d3">IsolationForest</data>
+      <data key="d4">2026-07-17T12:23:34.948106</data>
+      <data key="d5">passed</data>
+      <data key="d6">0.9995</data>
+      <data key="d7">0.5714</data>
+    </node>
+    <node id="algorithm:IsolationForest">
+      <data key="d0">Algorithm</data>
+      <data key="d8">IsolationForest</data>
+    </node>
+    <node id="validationrun:task_20260717_122332_65ee68ef:v2">
+      <data key="d0">ValidationRun</data>
+      <data key="d1">anomaly_detection</data>
+      <data key="d3">LocalOutlierFactor</data>
+      <data key="d4">2026-07-17T12:23:40.361960</data>
+      <data key="d5">failed</data>
+      <data key="d6">0.042</data>
+      <data key="d7">0.0</data>
+    </node>
+    <node id="algorithm:LocalOutlierFactor">
+      <data key="d0">Algorithm</data>
+      <data key="d8">LocalOutlierFactor</data>
+    </node>
+    <node id="failurecase:task_20260717_122332_65ee68ef:v2">
+      <data key="d0">FailureCase</data>
+      <data key="d1">anomaly_detection</data>
+      <data key="d3">LocalOutlierFactor</data>
+      <data key="d9">pr_auc=0.042 &lt; 阈值 0.6</data>
+    </node>
+    <node id="lesson:anomaly_detection:LocalOutlierFactor">
+      <data key="d0">Lesson</data>
+      <data key="d1">anomaly_detection</data>
+      <data key="d3">LocalOutlierFactor</data>
+      <data key="d10">LocalOutlierFactor 在 anomaly_detection 场景曾验证失败（pr_auc=0.042 &lt; 阈值 0.6），下次应规避或降级。</data>
+    </node>
+    <node id="validationrun:task_20260717_122332_65ee68ef:v3">
+      <data key="d0">ValidationRun</data>
+      <data key="d1">anomaly_detection</data>
+      <data key="d3">OneClassSVM</data>
+      <data key="d4">2026-07-17T12:23:45.341658</data>
+      <data key="d5">failed</data>
+      <data key="d6">0.4118</data>
+      <data key="d7">0.1495</data>
+    </node>
+    <node id="algorithm:OneClassSVM">
+      <data key="d0">Algorithm</data>
+      <data key="d8">OneClassSVM</data>
+    </node>
+    <node id="failurecase:task_20260717_122332_65ee68ef:v3">
+      <data key="d0">FailureCase</data>
+      <data key="d1">anomaly_detection</data>
+      <data key="d3">OneClassSVM</data>
+      <data key="d9">pr_auc=0.4118 &lt; 阈值 0.6</data>
+    </node>
+    <node id="lesson:anomaly_detection:OneClassSVM">
+      <data key="d0">Lesson</data>
+      <data key="d1">anomaly_detection</data>
+      <data key="d3">OneClassSVM</data>
+      <data key="d10">OneClassSVM 在 anomaly_detection 场景曾验证失败（pr_auc=0.4118 &lt; 阈值 0.6），下次应规避或降级。</data>
+    </node>
+    <node id="validationrun:task_20260717_122345_47d9c013:v1">
+      <data key="d0">ValidationRun</data>
+      <data key="d1">anomaly_detection</data>
+      <data key="d3">IsolationForest</data>
+      <data key="d4">2026-07-17T12:23:47.857565</data>
+      <data key="d5">passed</data>
+      <data key="d6">0.9995</data>
+      <data key="d7">0.5714</data>
+    </node>
+    <node id="validationrun:task_20260717_122345_47d9c013:v2">
+      <data key="d0">ValidationRun</data>
+      <data key="d1">anomaly_detection</data>
+      <data key="d3">LocalOutlierFactor</data>
+      <data key="d4">2026-07-17T12:23:52.799689</data>
+      <data key="d5">failed</data>
+      <data key="d6">0.042</data>
+      <data key="d7">0.0</data>
+    </node>
+    <node id="failurecase:task_20260717_122345_47d9c013:v2">
+      <data key="d0">FailureCase</data>
+      <data key="d1">anomaly_detection</data>
+      <data key="d3">LocalOutlierFactor</data>
+      <data key="d9">pr_auc=0.042 &lt; 阈值 0.6</data>
+    </node>
+    <node id="validationrun:task_20260717_122345_47d9c013:v3">
+      <data key="d0">ValidationRun</data>
+      <data key="d1">anomaly_detection</data>
+      <data key="d3">OneClassSVM</data>
+      <data key="d4">2026-07-17T12:23:57.544977</data>
+      <data key="d5">failed</data>
+      <data key="d6">0.4118</data>
+      <data key="d7">0.1495</data>
+    </node>
+    <node id="failurecase:task_20260717_122345_47d9c013:v3">
+      <data key="d0">FailureCase</data>
+      <data key="d1">anomaly_detection</data>
+      <data key="d3">OneClassSVM</data>
+      <data key="d9">pr_auc=0.4118 &lt; 阈值 0.6</data>
+    </node>
+    <edge source="capability:anomaly_detection" target="validationrun:task_20260717_122332_65ee68ef:v1" id="0">
+      <data key="d11">VALIDATED_IN</data>
+    </edge>
+    <edge source="capability:anomaly_detection" target="algorithm:IsolationForest" id="0">
+      <data key="d11">USES_ALGORITHM</data>
+    </edge>
+    <edge source="capability:anomaly_detection" target="algorithm:IsolationForest" id="1">
+      <data key="d11">USES_ALGORITHM</data>
+    </edge>
+    <edge source="capability:anomaly_detection" target="validationrun:task_20260717_122332_65ee68ef:v2" id="0">
+      <data key="d11">VALIDATED_IN</data>
+    </edge>
+    <edge source="capability:anomaly_detection" target="algorithm:LocalOutlierFactor" id="0">
+      <data key="d11">USES_ALGORITHM</data>
+    </edge>
+    <edge source="capability:anomaly_detection" target="algorithm:LocalOutlierFactor" id="1">
+      <data key="d11">USES_ALGORITHM</data>
+    </edge>
+    <edge source="capability:anomaly_detection" target="lesson:anomaly_detection:LocalOutlierFactor" id="0">
+      <data key="d11">HAS_LESSON</data>
+    </edge>
+    <edge source="capability:anomaly_detection" target="lesson:anomaly_detection:LocalOutlierFactor" id="1">
+      <data key="d11">HAS_LESSON</data>
+    </edge>
+    <edge source="capability:anomaly_detection" target="validationrun:task_20260717_122332_65ee68ef:v3" id="0">
+      <data key="d11">VALIDATED_IN</data>
+    </edge>
+    <edge source="capability:anomaly_detection" target="algorithm:OneClassSVM" id="0">
+      <data key="d11">USES_ALGORITHM</data>
+    </edge>
+    <edge source="capability:anomaly_detection" target="algorithm:OneClassSVM" id="1">
+      <data key="d11">USES_ALGORITHM</data>
+    </edge>
+    <edge source="capability:anomaly_detection" target="lesson:anomaly_detection:OneClassSVM" id="0">
+      <data key="d11">HAS_LESSON</data>
+    </edge>
+    <edge source="capability:anomaly_detection" target="lesson:anomaly_detection:OneClassSVM" id="1">
+      <data key="d11">HAS_LESSON</data>
+    </edge>
+    <edge source="capability:anomaly_detection" target="validationrun:task_20260717_122345_47d9c013:v1" id="0">
+      <data key="d11">VALIDATED_IN</data>
+    </edge>
+    <edge source="capability:anomaly_detection" target="validationrun:task_20260717_122345_47d9c013:v2" id="0">
+      <data key="d11">VALIDATED_IN</data>
+    </edge>
+    <edge source="capability:anomaly_detection" target="validationrun:task_20260717_122345_47d9c013:v3" id="0">
+      <data key="d11">VALIDATED_IN</data>
+    </edge>
+    <edge source="validationrun:task_20260717_122332_65ee68ef:v2" target="failurecase:task_20260717_122332_65ee68ef:v2" id="0">
+      <data key="d11">CAUSED_LESSON</data>
+    </edge>
+    <edge source="failurecase:task_20260717_122332_65ee68ef:v2" target="lesson:anomaly_detection:LocalOutlierFactor" id="0">
+      <data key="d11">CAUSED_LESSON</data>
+    </edge>
+    <edge source="validationrun:task_20260717_122332_65ee68ef:v3" target="failurecase:task_20260717_122332_65ee68ef:v3" id="0">
+      <data key="d11">CAUSED_LESSON</data>
+    </edge>
+    <edge source="failurecase:task_20260717_122332_65ee68ef:v3" target="lesson:anomaly_detection:OneClassSVM" id="0">
+      <data key="d11">CAUSED_LESSON</data>
+    </edge>
+    <edge source="validationrun:task_20260717_122345_47d9c013:v2" target="failurecase:task_20260717_122345_47d9c013:v2" id="0">
+      <data key="d11">CAUSED_LESSON</data>
+    </edge>
+    <edge source="failurecase:task_20260717_122345_47d9c013:v2" target="lesson:anomaly_detection:LocalOutlierFactor" id="0">
+      <data key="d11">CAUSED_LESSON</data>
+    </edge>
+    <edge source="validationrun:task_20260717_122345_47d9c013:v3" target="failurecase:task_20260717_122345_47d9c013:v3" id="0">
+      <data key="d11">CAUSED_LESSON</data>
+    </edge>
+    <edge source="failurecase:task_20260717_122345_47d9c013:v3" target="lesson:anomaly_detection:OneClassSVM" id="0">
+      <data key="d11">CAUSED_LESSON</data>
+    </edge>
+  </graph>
+</graphml>

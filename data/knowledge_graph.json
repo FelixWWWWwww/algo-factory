@@ -3,83 +3,230 @@
     "capability:anomaly_detection": {
       "type": "Capability",
       "task_type": "anomaly_detection",
-      "target": "识别设备传感器读数中的离群点"
+      "target": "检测交易中的异常/欺诈样本"
     },
-    "validationrun:task_20260717_090616_d81ac910:v1": {
+    "validationrun:task_20260717_122332_65ee68ef:v1": {
       "type": "ValidationRun",
       "task_type": "anomaly_detection",
-      "timestamp": "2026-07-17T09:06:18.025261",
+      "algorithm": "IsolationForest",
+      "timestamp": "2026-07-17T12:23:34.948106",
       "status": "passed",
-      "pr_auc": 1.0,
+      "pr_auc": 0.9995,
       "f1": 0.5714
     },
-    "algorithm:Isolation Forest 方案": {
+    "algorithm:IsolationForest": {
       "type": "Algorithm",
-      "name": "Isolation Forest 方案"
+      "name": "IsolationForest"
     },
-    "validationrun:task_20260717_090616_d81ac910:v2": {
+    "validationrun:task_20260717_122332_65ee68ef:v2": {
       "type": "ValidationRun",
       "task_type": "anomaly_detection",
-      "timestamp": "2026-07-17T09:06:19.738474",
+      "algorithm": "LocalOutlierFactor",
+      "timestamp": "2026-07-17T12:23:40.361960",
       "status": "failed",
-      "pr_auc": 0.0587,
-      "f1": 0.0429
+      "pr_auc": 0.042,
+      "f1": 0.0
     },
-    "algorithm:LOF 方案": {
+    "algorithm:LocalOutlierFactor": {
       "type": "Algorithm",
-      "name": "LOF 方案"
+      "name": "LocalOutlierFactor"
     },
-    "failurecase:task_20260717_090616_d81ac910:v2": {
+    "failurecase:task_20260717_122332_65ee68ef:v2": {
       "type": "FailureCase",
-      "reason": "pr_auc=0.0587 < 阈值 0.6"
+      "task_type": "anomaly_detection",
+      "algorithm": "LocalOutlierFactor",
+      "reason": "pr_auc=0.042 < 阈值 0.6"
     },
-    "validationrun:task_20260717_090616_d81ac910:v3": {
+    "lesson:anomaly_detection:LocalOutlierFactor": {
+      "type": "Lesson",
+      "task_type": "anomaly_detection",
+      "algorithm": "LocalOutlierFactor",
+      "content": "LocalOutlierFactor 在 anomaly_detection 场景曾验证失败（pr_auc=0.042 < 阈值 0.6），下次应规避或降级。"
+    },
+    "validationrun:task_20260717_122332_65ee68ef:v3": {
       "type": "ValidationRun",
       "task_type": "anomaly_detection",
-      "timestamp": "2026-07-17T09:06:21.035774",
-      "status": "passed",
-      "pr_auc": 0.8286,
-      "f1": 0.7692
+      "algorithm": "OneClassSVM",
+      "timestamp": "2026-07-17T12:23:45.341658",
+      "status": "failed",
+      "pr_auc": 0.4118,
+      "f1": 0.1495
     },
-    "algorithm:One-Class SVM 方案": {
+    "algorithm:OneClassSVM": {
       "type": "Algorithm",
-      "name": "One-Class SVM 方案"
+      "name": "OneClassSVM"
+    },
+    "failurecase:task_20260717_122332_65ee68ef:v3": {
+      "type": "FailureCase",
+      "task_type": "anomaly_detection",
+      "algorithm": "OneClassSVM",
+      "reason": "pr_auc=0.4118 < 阈值 0.6"
+    },
+    "lesson:anomaly_detection:OneClassSVM": {
+      "type": "Lesson",
+      "task_type": "anomaly_detection",
+      "algorithm": "OneClassSVM",
+      "content": "OneClassSVM 在 anomaly_detection 场景曾验证失败（pr_auc=0.4118 < 阈值 0.6），下次应规避或降级。"
+    },
+    "validationrun:task_20260717_122345_47d9c013:v1": {
+      "type": "ValidationRun",
+      "task_type": "anomaly_detection",
+      "algorithm": "IsolationForest",
+      "timestamp": "2026-07-17T12:23:47.857565",
+      "status": "passed",
+      "pr_auc": 0.9995,
+      "f1": 0.5714
+    },
+    "validationrun:task_20260717_122345_47d9c013:v2": {
+      "type": "ValidationRun",
+      "task_type": "anomaly_detection",
+      "algorithm": "LocalOutlierFactor",
+      "timestamp": "2026-07-17T12:23:52.799689",
+      "status": "failed",
+      "pr_auc": 0.042,
+      "f1": 0.0
+    },
+    "failurecase:task_20260717_122345_47d9c013:v2": {
+      "type": "FailureCase",
+      "task_type": "anomaly_detection",
+      "algorithm": "LocalOutlierFactor",
+      "reason": "pr_auc=0.042 < 阈值 0.6"
+    },
+    "validationrun:task_20260717_122345_47d9c013:v3": {
+      "type": "ValidationRun",
+      "task_type": "anomaly_detection",
+      "algorithm": "OneClassSVM",
+      "timestamp": "2026-07-17T12:23:57.544977",
+      "status": "failed",
+      "pr_auc": 0.4118,
+      "f1": 0.1495
+    },
+    "failurecase:task_20260717_122345_47d9c013:v3": {
+      "type": "FailureCase",
+      "task_type": "anomaly_detection",
+      "algorithm": "OneClassSVM",
+      "reason": "pr_auc=0.4118 < 阈值 0.6"
     }
   },
   "edges": [
     {
       "source": "capability:anomaly_detection",
-      "target": "validationrun:task_20260717_090616_d81ac910:v1",
+      "target": "validationrun:task_20260717_122332_65ee68ef:v1",
       "edge_type": "VALIDATED_IN"
     },
     {
       "source": "capability:anomaly_detection",
-      "target": "algorithm:Isolation Forest 方案",
+      "target": "algorithm:IsolationForest",
       "edge_type": "USES_ALGORITHM"
     },
     {
       "source": "capability:anomaly_detection",
-      "target": "validationrun:task_20260717_090616_d81ac910:v2",
+      "target": "algorithm:IsolationForest",
+      "edge_type": "USES_ALGORITHM"
+    },
+    {
+      "source": "capability:anomaly_detection",
+      "target": "validationrun:task_20260717_122332_65ee68ef:v2",
       "edge_type": "VALIDATED_IN"
     },
     {
       "source": "capability:anomaly_detection",
-      "target": "algorithm:LOF 方案",
+      "target": "algorithm:LocalOutlierFactor",
       "edge_type": "USES_ALGORITHM"
     },
     {
       "source": "capability:anomaly_detection",
-      "target": "validationrun:task_20260717_090616_d81ac910:v3",
+      "target": "algorithm:LocalOutlierFactor",
+      "edge_type": "USES_ALGORITHM"
+    },
+    {
+      "source": "capability:anomaly_detection",
+      "target": "lesson:anomaly_detection:LocalOutlierFactor",
+      "edge_type": "HAS_LESSON"
+    },
+    {
+      "source": "capability:anomaly_detection",
+      "target": "lesson:anomaly_detection:LocalOutlierFactor",
+      "edge_type": "HAS_LESSON"
+    },
+    {
+      "source": "capability:anomaly_detection",
+      "target": "validationrun:task_20260717_122332_65ee68ef:v3",
       "edge_type": "VALIDATED_IN"
     },
     {
       "source": "capability:anomaly_detection",
-      "target": "algorithm:One-Class SVM 方案",
+      "target": "algorithm:OneClassSVM",
       "edge_type": "USES_ALGORITHM"
     },
     {
-      "source": "validationrun:task_20260717_090616_d81ac910:v2",
-      "target": "failurecase:task_20260717_090616_d81ac910:v2",
+      "source": "capability:anomaly_detection",
+      "target": "algorithm:OneClassSVM",
+      "edge_type": "USES_ALGORITHM"
+    },
+    {
+      "source": "capability:anomaly_detection",
+      "target": "lesson:anomaly_detection:OneClassSVM",
+      "edge_type": "HAS_LESSON"
+    },
+    {
+      "source": "capability:anomaly_detection",
+      "target": "lesson:anomaly_detection:OneClassSVM",
+      "edge_type": "HAS_LESSON"
+    },
+    {
+      "source": "capability:anomaly_detection",
+      "target": "validationrun:task_20260717_122345_47d9c013:v1",
+      "edge_type": "VALIDATED_IN"
+    },
+    {
+      "source": "capability:anomaly_detection",
+      "target": "validationrun:task_20260717_122345_47d9c013:v2",
+      "edge_type": "VALIDATED_IN"
+    },
+    {
+      "source": "capability:anomaly_detection",
+      "target": "validationrun:task_20260717_122345_47d9c013:v3",
+      "edge_type": "VALIDATED_IN"
+    },
+    {
+      "source": "validationrun:task_20260717_122332_65ee68ef:v2",
+      "target": "failurecase:task_20260717_122332_65ee68ef:v2",
+      "edge_type": "CAUSED_LESSON"
+    },
+    {
+      "source": "failurecase:task_20260717_122332_65ee68ef:v2",
+      "target": "lesson:anomaly_detection:LocalOutlierFactor",
+      "edge_type": "CAUSED_LESSON"
+    },
+    {
+      "source": "validationrun:task_20260717_122332_65ee68ef:v3",
+      "target": "failurecase:task_20260717_122332_65ee68ef:v3",
+      "edge_type": "CAUSED_LESSON"
+    },
+    {
+      "source": "failurecase:task_20260717_122332_65ee68ef:v3",
+      "target": "lesson:anomaly_detection:OneClassSVM",
+      "edge_type": "CAUSED_LESSON"
+    },
+    {
+      "source": "validationrun:task_20260717_122345_47d9c013:v2",
+      "target": "failurecase:task_20260717_122345_47d9c013:v2",
+      "edge_type": "CAUSED_LESSON"
+    },
+    {
+      "source": "failurecase:task_20260717_122345_47d9c013:v2",
+      "target": "lesson:anomaly_detection:LocalOutlierFactor",
+      "edge_type": "CAUSED_LESSON"
+    },
+    {
+      "source": "validationrun:task_20260717_122345_47d9c013:v3",
+      "target": "failurecase:task_20260717_122345_47d9c013:v3",
+      "edge_type": "CAUSED_LESSON"
+    },
+    {
+      "source": "failurecase:task_20260717_122345_47d9c013:v3",
+      "target": "lesson:anomaly_detection:OneClassSVM",
       "edge_type": "CAUSED_LESSON"
     }
   ]
