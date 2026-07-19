@@ -21,6 +21,8 @@ T2.6: 单模型训练节点（支持多算法）
 
 from __future__ import annotations
 
+import importlib
+import inspect
 import logging
 import time
 from typing import TYPE_CHECKING
@@ -53,6 +55,7 @@ def train_node(
     algorithm: str = "IsolationForest",
     n_estimators: int = 100,
     random_state: int = 42,
+    import_path: str = "",
 ) -> "TaskState":
     """单模型训练节点：fit → score → 映射硬标签。
 
@@ -95,6 +98,7 @@ def train_node(
             contamination=contamination,
             n_estimators=n_estimators,
             random_state=random_state,
+            import_path=import_path,
         )
         used_fallback, fallback_reason = False, None
         logger.info(f"[train] {algo} fit 完成（{time.perf_counter()-t0:.2f}s）")
@@ -151,6 +155,7 @@ def _fit_model(
     contamination: float,
     n_estimators: int,
     random_state: int,
+    import_path: str = "",
 ) -> tuple:
     """训练指定算法，返回 (scores, y_pred_raw, threshold, model)。
 
@@ -186,7 +191,8 @@ def _fit_model(
         model.fit(X_train)
 
     else:
-        raise ValueError(f"不支持的算法: {algo}（支持 IsolationForest/LocalOutlierFactor/OneClassSVM）")
+        # 非预设算法：按 import_path 动态加载（支持 LLM 选出的任意算法，如 pyod/其它 sklearn）
+        return _dynamic_fit_score(algo, import_path, X_train, X_score, contamination)
 
     # 三种模型统一：decision_function 正常样本高分、异常样本低分（<0 为异常）
     raw_df     = model.decision_function(X_score)
@@ -211,3 +217,51 @@ def _zscore_baseline(X: np.ndarray) -> tuple:
     y_pred = (scores > threshold).astype(int)
     logger.info(f"[zscore_baseline] 检出 {y_pred.sum()}/{len(X)} ({y_pred.mean():.2%})")
     return scores, y_pred, threshold
+
+
+# 常见算法名 → import 路径（LLM 未给 import_path 时的兜底猜测）
+_GUESS_PATH = {
+    "EllipticEnvelope": "sklearn.covariance.EllipticEnvelope",
+    "SGDOneClassSVM": "sklearn.linear_model.SGDOneClassSVM",
+    "ECOD": "pyod.models.ecod.ECOD",
+    "COPOD": "pyod.models.copod.COPOD",
+    "KNN": "pyod.models.knn.KNN",
+    "HBOS": "pyod.models.hbos.HBOS",
+    "AutoEncoder": "pyod.models.auto_encoder.AutoEncoder",
+}
+
+
+def _dynamic_fit_score(algo, import_path, X_train, X_score, contamination):
+    """动态 import 任意异常检测算法，统一打分口径（scores 越大越可疑，y_pred_raw 用 -1=异常）。
+
+    兼容两套约定：
+      - sklearn 家族：decision_function 越大越正常 → 取负；predict 返回 -1/1。
+      - pyod 家族：decision_function 越大越异常 → 不取负；predict 返回 1=异常/0=正常 → 统一成 -1/1。
+    任何环节出错则向上抛，由 train_node 回退 z-score 基线。
+    """
+    path = import_path or _GUESS_PATH.get(algo)
+    if not path or "." not in path:
+        raise ValueError(f"未知算法且无有效 import_path: {algo}")
+    mod_name, cls_name = path.rsplit(".", 1)
+    cls = getattr(importlib.import_module(mod_name), cls_name)
+
+    sig = inspect.signature(cls).parameters
+    kw = {}
+    if "contamination" in sig:
+        kw["contamination"] = float(np.clip(contamination, 1e-4, 0.5))
+    if "random_state" in sig:
+        kw["random_state"] = 42
+    if "novelty" in sig:
+        kw["novelty"] = True
+    model = cls(**kw)
+    model.fit(X_train)
+
+    is_pyod = path.startswith("pyod")
+    if is_pyod:
+        scores = np.asarray(model.decision_function(X_score), dtype=float)      # 越大越异常
+        y_pred_raw = np.where(np.asarray(model.predict(X_score)) == 1, -1, 1)   # 1=异常 → -1
+    else:
+        scores = -np.asarray(model.decision_function(X_score), dtype=float)     # sklearn：取负
+        y_pred_raw = np.asarray(model.predict(X_score))                          # -1 / 1
+    threshold = float(np.quantile(scores, 1.0 - float(np.clip(contamination, 1e-4, 0.5))))
+    return scores, y_pred_raw, threshold, model

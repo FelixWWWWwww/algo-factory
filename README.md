@@ -70,17 +70,18 @@ https://github.com/user-attachments/assets/1c0c2a5a-d7d6-42e5-aec2-72309b9109af
 
 ## 🌟 核心特性
 
-| | 特性 | 说明 |
-|---|---|---|
-| 🤖 | **多智能体协作** | 6 个职责单一的 Agent 接力，而非单次 prompt 生成代码 |
-| 🏆 | **多方案自动竞技** | IsolationForest / LOF / One-Class SVM 三算法同台，按 PR-AUC 择优 |
-| 🔒 | **沙箱安全执行** | 生成代码经 AST 安全扫描后，在隔离子进程中运行，超时硬熔断 |
-| 🔁 | **失败自动修复** | 验证不通过 → 带"负面约束"退回重写，最多 N 轮 |
-| 🧠 | **知识图谱自沉淀** | 每次结果（含失败案例）回写图谱，越用越聪明 |
+| | 特性 | 说明                                                      |
+|---|---|---------------------------------------------------------|
+| 🤖 | **多智能体协作** | 6 个职责单一的 Agent 接力，而非单次 prompt 生成代码                      |
+| 🧬 | **LLM 驱动（非硬编码）** | 意图泛化（CoT 解析任意场景）· 动态选型（依数据画像推荐算法）· 零样本代码生成              |
+| 🏆 | **多方案自动竞技** | 依数据画像动态推荐 2-3 个算法同台 **（不限固定池）**，按 PR-AUC 择优             |
+| 🔒 | **沙箱安全执行** | 生成代码经 AST 安全扫描后，在隔离子进程中运行，超时硬熔断                         |
+| 🔁 | **失败自动修复** | 验证不通过 → 带"负面约束"退回重写，最多 N 轮                              |
+| 🧠 | **知识图谱自沉淀** | 每次结果（含失败案例）回写图谱，越用越聪明                                   |
 | 🔁 | **图谱自进化 · 从失败中学习** | 第二次遇到同类任务，自动检索历史失败并**规避/降级**（`demo_second_run.py` 可复现验证） |
-| 🔌 | **三种交互入口** | CLI / Streamlit Web UI / FastAPI，一套内核全覆盖 |
-| 🎭 | **Mock / Real 无缝切换** | 无 API Key 也能全链路演示；接 DeepSeek 即真实推理 |
-| ✅ | **106 个测试护航** | 单元 / 集成 / 端到端 / 边界用例全绿 |
+| 🔌 | **三种交互入口** | CLI / Streamlit Web UI / FastAPI，一套内核全覆盖                |
+| 🎭 | **Mock / Real 无缝切换** | 无 API Key 也能全链路演示；接 DeepSeek 即真实推理                      |
+| ✅ | **106 个测试护航** | 单元 / 集成 / 端到端 / 边界用例全绿                                  |
 
 ---
 
@@ -90,9 +91,10 @@ https://github.com/user-attachments/assets/1c0c2a5a-d7d6-42e5-aec2-72309b9109af
 
 ```mermaid
 flowchart TD
-    U([🗣️ 用户需求]) --> I[① Interpreter<br/>理解需求 → TaskCard]
-    I --> R[② Retriever<br/>检索知识图谱]
-    R --> P[③ Planner<br/>多算法候选方案]
+    U([🗣️ 用户需求]) --> I[① Interpreter<br/>意图泛化 → TaskCard]
+    I --> PF[📊 数据画像<br/>profile_node]
+    PF --> R[② Retriever<br/>检索知识图谱]
+    R --> P[③ Planner<br/>依画像动态选型]
     P --> C[④ Coder<br/>生成可运行代码]
     C --> SEC{{🔒 AST 安全检查}}
     SEC --> SB[⑤ Sandbox + Validator<br/>隔离运行 · 五层验证]
@@ -115,15 +117,18 @@ flowchart TD
 
 | # | Agent | 职能类比 | 输入 → 输出 | 关键实现 |
 |---|---|---|---|---|
-| ① | **Interpreter** | 产品经理 | 自然语言 → `TaskCard`（含 task_type / metrics / contamination） | LLM 结构化抽取 + 关键字兜底 |
+| ① | **Interpreter** | 产品经理 | 任意场景需求 → `TaskCard`（CoT 解析 anomaly_subtype / 约束 / 指标取向） | LLM 思维链解析 + 关键字兜底 |
 | ② | **Retriever** | 图书管理员 | `TaskCard` → 相似能力 / 教训 / **失败案例** | 图谱按 `task_type` 检索 |
-| ③ | **Planner** | 架构师 | 上下文 → 3 套候选方案（含自然语言 rationale） | IForest / LOF / OCSVM |
-| ④ | **Coder** | 程序员 | 方案 → 可运行 Python（`def run(data_path)->dict`） | LLM 生成 + 正确模板兜底 |
+| ③ | **Planner** | 架构师 | `TaskCard` + **数据画像** → 动态推荐 2-3 个算法（含超参空间） | LLM 依 `data_profile` 选型，**废除固定池** |
+| ④ | **Coder** | 程序员 | 方案 → 可运行 Python（`def run(data_path)->dict`） | LLM **零样本现写**；模板降级为 N 次失败后的兜底拦截器 |
 | ⑤ | **Validator** | 质检员 | 代码 → 五层验证报告 | 语法→安全→能跑→达标→签名 |
 | ⑥ | **Curator** | 档案管理员 | 验证结果 → 图谱节点/边 | 成功/失败双写，失败沉淀为 `FailureCase` |
 
 > [!NOTE]
 > **图谱增强的核心卖点**：Retriever 会**主动把历史 `FailureCase`（如"用 accuracy 选模导致废模型"）纳入上下文**，让 Planner 提前规避已知的坑——这就是"失败经验可复用"。
+
+> [!NOTE]
+> **`--real` 才是完全体**：Mock 模式用预制/模板离线演示；接入真实 LLM 后，Planner 依数据画像推荐**未预设算法**（如 ECOD / EllipticEnvelope），Coder 为其**从零现写代码**，`train_node` 按 `import_path` 动态加载执行——LLM 从"装饰"变为"承重"。提示词见 `factory/llm/prompts/*.jinja2`。
 
 ---
 
@@ -173,7 +178,7 @@ flowchart TD
 
 ### 🔁 从失败中学习（自进化 · 可复现验证）
 
-沉淀不是终点——**关键是下次能否规避同一个坑。** 系统把失败写成 `FailureCase` 与可复用的 `Lesson` 节点；下次同类任务，Retriever 从图谱检索到这些教训，Planner 据此**主动降级历史失败算法**。
+系统把失败写成 `FailureCase` 与可复用的 `Lesson` 节点；下次同类任务，Retriever 从图谱检索到这些教训，Planner 据此**主动降级历史失败算法**。
 
 一条命令即可现场验证（`demo_second_run.py`）：
 
@@ -216,16 +221,19 @@ pip install -r requirements.txt
 ### 三种启动方法
 
 ```bash
-# 1) 命令行（推荐首跑，Mock 模式零依赖）
-python cli.py run "对工业传感器数据进行异常检测" --mock
+# 1) 命令行；--data 可喂自定义 CSV
+python cli.py run "对工业传感器数据进行异常检测" --mock/real
+python cli.py run "对工业传感器数据进行异常检测" --mock/real --data data/synth/demo_hard.csv
 
-# 2) Web 界面（演示首选：Run / Graph / History 三个标签页）
+# 2) Web 界面（演示首选：Run 上传 CSV / Graph / History 三个标签页）
 streamlit run app.py
 
 # 3) HTTP API
 uvicorn api:app --port 8000
-# curl -X POST http://127.0.0.1:8000/run -F 'query=对传感器数据异常检测' -F 'mock=true'
+# curl -X POST http://127.0.0.1:8000/run -F 'query=对传感器数据异常检测' -F 'mock=true' -F 'file=@data/synth/demo_hard.csv'
 ```
+
+> 三种入口共用同一套内核（`Pipeline.run`），产出一致；均支持喂自定义 CSV（CLI `--data` / Web 上传 / API `file`），均写入 History。
 
 ### 接入真实大模型（DeepSeek 示例）
 

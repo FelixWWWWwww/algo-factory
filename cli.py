@@ -22,6 +22,7 @@ def _ensure_utf8_stdout() -> None:
 def run(
         query: str = typer.Argument(..., help="任务描述，如 '对工业传感器数据进行异常检测'"),
         mock: bool = typer.Option(True, "--mock/--real", help="是否使用 Mock 模式"),
+        data: str = typer.Option(None, "--data", "-d", help="CSV 数据路径（可选；不传则自动合成）"),
         output_dir: str = typer.Option("logs", "--output-dir", "-o", help="日志输出目录"),
 ):
     """
@@ -48,7 +49,7 @@ def run(
 
     # 创建流水线并执行
     pipeline = Pipeline(use_mock=mock)
-    state = pipeline.run(query)
+    state = pipeline.run(query, data_path=data)
 
     # 落盘日志
     output_file = pipeline.dump_state(state, output_dir=output_dir)
@@ -83,11 +84,12 @@ def status(task_id: str = typer.Argument(..., help="Task ID")):
 def run_dag(
         query: str = typer.Argument("对工业传感器数据进行异常检测", help="任务描述"),
         mock: bool = typer.Option(True, "--mock/--real"),
+        data: str = typer.Option(None, "--data", "-d", help="CSV 数据路径（可选）"),
 ):
     """以 DAG 编排方式运行（与 run 等价，保留命令名兼容）。"""
     _ensure_utf8_stdout()
     pipeline = Pipeline(use_mock=mock)
-    state = pipeline.run(query)
+    state = pipeline.run(query, data_path=data)
     print(f"\n✅ 完成：best={state.best_model}  metrics={state.final_metrics}")
     print(f"   日志：{pipeline.dump_state(state)}")
 

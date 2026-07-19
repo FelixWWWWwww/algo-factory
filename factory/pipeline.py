@@ -11,7 +11,7 @@ from factory.agents.curator_agent import CuratorAgent
 from factory.agents.coder_agent import CoderAgent as _Coder, _is_valid
 from factory.graph.store import GraphStore
 from factory.sandbox.validator import validate, load_config
-from factory.nodes import (make_synthetic_dataset, data_ingestion_node, eda_node,
+from factory.nodes import (make_synthetic_dataset, profile_node, data_ingestion_node, eda_node,
                            preprocess_node, split_node, train_node, evaluate_node)
 from factory.report import generate_report
 
@@ -48,13 +48,16 @@ class Pipeline:
         state = TaskState(user_query=query)
         state._use_mock = self.use_mock
 
-        # a→c 理解 / 检索 / 规划
+        # a 理解需求
         state = InterpreterAgent(self.llm).run(state)
+
+        # 数据就绪（未提供则合成）→ 数据画像（供 Planner 动态选型）
+        data_path = data_path or self._ensure_data(state)
+        profile_node(state, data_path)
+
+        # b 检索经验 / c 动态规划（Planner 现在能看到 data_profile）
         state = RetrieverAgent(self.llm, graph_store=self.graph_store).run(state)
         state = PlannerAgent(self.llm).run(state)
-
-        # 数据（未提供则合成）
-        data_path = data_path or self._ensure_data(state)
 
         # d 生成代码
         state = CoderAgent(self.llm, out_dir=os.path.join(self.work_dir, "examples")).run(state)
@@ -100,21 +103,26 @@ class Pipeline:
         make_synthetic_dataset(1500, 6, ratio, save_path=path)
         return path
 
-    def _validate_with_repair(self, plan, cv, data_path, config, state):
-        """T3.4：验证失败 → 带负面约束重生成 → 再验证，最多 max_retries 轮。"""
+    def _validate_with_repair(self, plan, cv, data_path, config, state=None):
+        """T3.4：验证失败 → 纯 LLM 修复最多 N 轮；N 次耗尽后才启用模板兜底拦截器。"""
         report = validate(cv.code, data_path, config)
         retries = 0
         while report.status != "passed" and retries < self.max_retries:
             retries += 1
-            logger.info(f"[repair] {plan.algorithm} 第 {retries} 轮修复（{report.failed_layer}）")
+            logger.info(f"[repair] {plan.algorithm} 第 {retries} 轮 LLM 修复（{report.failed_layer}）")
             cv.validation_error = report.message
-            cv.code = self._repair(plan, report)
+            cv.code = self._llm_repair(plan, report, cv.code)   # 纯 LLM，不塞模板
+            report = validate(cv.code, data_path, config)
+        if report.status != "passed":
+            # 连续 N 次仍失败 → 底层拦截器启用模板兜底
+            logger.info(f"[repair] {plan.algorithm} 修复 {self.max_retries} 次仍失败 → 启用模板兜底")
+            cv.code = _Coder(self.llm)._template(plan.algorithm, plan.contamination or 0.05)
             report = validate(cv.code, data_path, config)
         cv.validation_metrics = report.metrics
         return report
 
-    def _repair(self, plan, report) -> str:
-        """带负面约束提示 Coder 重生成；不可用时退回模板。"""
+    def _llm_repair(self, plan, report, prev_code: str) -> str:
+        """纯 LLM 带负面约束重写；产出不可用则保留上一版（不在修复阶段塞模板）。"""
         try:
             prompt = (
                 f"上一版 {plan.algorithm} 异常检测代码(代码)验证失败："
@@ -127,7 +135,7 @@ class Pipeline:
                 return code
         except Exception:
             pass
-        return _Coder(self.llm)._template(plan.algorithm, plan.contamination or 0.05)
+        return prev_code
 
     def _select_best(self, state: TaskState):
         pairs = list(zip(state.plans, state.validation_results))
@@ -150,13 +158,16 @@ class Pipeline:
         """用最优算法跑一遍 node 流水线，为报告填充 EDA 摘要 / 异常分数 / Top-K。
         不覆盖沙箱择优的 final_metrics（结束后复位）。任何失败都吞掉，不影响主流程。"""
         best_algo = state.best_model or "IsolationForest"
+        best_plan = next((p for p in state.plans if getattr(p, "is_best", False)), None) \
+            or next((p for p in state.plans if p.algorithm == best_algo), None)
+        best_import = getattr(best_plan, "import_path", "") if best_plan else ""
         saved_final = dict(state.final_metrics or {})
         try:
             data_ingestion_node(state, data_path)
             eda_node(state, self.llm)
             preprocess_node(state, algorithm=best_algo)
             split_node(state)
-            train_node(state, algorithm=best_algo)
+            train_node(state, algorithm=best_algo, import_path=best_import)
             evaluate_node(state)
         except Exception as e:
             logger.warning(f"[pipeline] 报告富化失败（不影响主流程）: {e}")

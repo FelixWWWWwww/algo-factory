@@ -13,7 +13,9 @@ async def run_task(query: str = Form(...), mock: bool = Form(True),
         fd, data_path = tempfile.mkstemp(suffix=".csv")
         with os.fdopen(fd, "wb") as f:
             f.write(await file.read())
-    state = Pipeline(use_mock=mock).run(query, data_path=data_path)
+    pipe = Pipeline(use_mock=mock)
+    state = pipe.run(query, data_path=data_path)
+    pipe.dump_state(state)                      # 落盘 → 进 History
     return {
         "task_id": state.task_id,
         "best_model": state.best_model,

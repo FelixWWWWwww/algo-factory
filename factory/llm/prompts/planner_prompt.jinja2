@@ -1,41 +1,34 @@
-{# Planner Agent：根据数据特征生成方案 #}
+你是异常检测算法选型专家。请完全依据下方数据画像与任务卡进行推导，推荐 2-3 个最匹配的方案。你可自由选用 scikit-learn / pyod / 统计方法 / 深度模型中的任何适配者，不受任何预设算法清单约束。
 
-你是异常检测算法规划专家。
+# 任务卡（Interpreter 产出）
+{{ task_card_json }}
 
-## 用户需求
-{{ user_query }}
+# 数据画像（对真实数据实测得出）
+{{ data_profile_json }}
+{% if retrieved_context.failure_cases %}
+# 本场景历史失败经验（请规避，或说明这次为何不同）
+{% for fc in retrieved_context.failure_cases %}
+- {{ fc.algorithm }}：{{ fc.reason }}
+{% endfor %}
+{% endif %}
 
-## 数据特征分析
-- 样本数：{{ n_samples }}
-- 特征维度：{{ n_features }}
-- 异常占比：{{ anomaly_ratio | round(2) }}%（从 EDA 推断）
-- 是否有标签：{{ "是" if has_labels else "否" }}
+# 推导要求
+- 逐条把画像映射到算法族：维度高低、异常占比、特征类型（数值/类别/时序）、有无标签、量纲是否悬殊——各指向什么算法。
+- {{ task_card.anomaly_subtype }} 这一异常形态适合哪类方法。
+- 每个方案给出：可直接 import 的算法、预处理链、超参数搜索空间、结合画像的选型依据。
 
-## 已有知识
-{{ retrieved_context }}
-
-## 你的任务
-为上述任务生成 2-3 个候选方案，每个包含：
-1. 方案名称（如 "IForest + RobustScaler"）
-2. 算法选择（IForest / LOF / OCSVM）
-3. 数据预处理步骤
-4. 选择理由（为什么这个方案适合此数据）
-5. 期望的 PR-AUC 范围
-
-## 约束条件
-- 主指标必须是 **PR-AUC**，绝对不能用 Accuracy
-- 对极度不平衡数据（异常占比 < 5%），首推 IForest
-- 高维特征（> 100 维），不推荐 LOF
-
-返回 JSON 数组格式：
+# 输出（严格 JSON 数组，不要输出 JSON 以外内容）
 [
   {
-    "plan_id": 1,
-    "name": "方案名",
-    "algorithm": "IsolationForest",
-    "preprocessing": ["StandardScaler"],
-    "rationale": "选择理由",
-    "expected_pr_auc": [0.75, 0.85]
-  },
-  ...
+    "name": "<方案名>",
+    "algorithm": "<类名>",
+    "import_path": "<如 sklearn.ensemble.IsolationForest>",
+    "library": "scikit-learn | pyod | scipy | ...",
+    "needs_scaling": true,
+    "preprocessing": ["<有序步骤>"],
+    "hyperparameter_space": {"<参数名>": ["<候选值列表>"]},
+    "rationale": "<自然语言理由>",
+    "fit_reason": "<结合 data_profile 的依据>",
+    "expected_metric": 0.75
+  }
 ]

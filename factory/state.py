@@ -19,6 +19,7 @@ class Plan(BaseModel):
     """候选方案 - Planner 产出"""
     name: str  # 方案名称（如"Isolation Forest 方案"）
     algorithm: str = ""  # 算法名（如"IsolationForest" / "OneClassSVM" / "LOF"）
+    import_path: str = ""  # 可 import 的完整路径（如 sklearn.covariance.EllipticEnvelope），LLM 动态选型时填充
     pipeline_steps: List[str] = []  # 管道步骤
     rationale: str = ""  # 自然语言解释为什么选这个算法
     expected_metric: float = 0.0  # 预期主指标（异常检测用 PR-AUC，如 0.75）
@@ -103,6 +104,7 @@ class TaskState(BaseModel):
     # ========== 数据接入产物（T1.5） ==========
     raw_df: Optional[Any] = None  # 原始 DataFrame（pandas），节点间传递
     schema_info: Dict[str, Any] = {}  # 列名 → dtype + 基础统计
+    data_profile: Dict[str, Any] = {}  # 数据画像（供 Planner 动态选型：维度/异常比例/特征类型/量纲）
     eda_summary: str = ""  # EDA 自然语言摘要（LLM 生成）
 
     # ========== 预处理产物（T1.6） ==========          ← 新增这一块

@@ -1,0 +1,22 @@
+你是资深机器学习工程师。请从零编写一段完整、可独立运行的 Python 脚本，实现下方方案的异常检测全流程（预处理 → 训练 → 评估）。不得留 TODO 或伪代码。
+
+# 方案（Planner 产出，唯一事实来源）
+{{ plan_json }}
+
+# 数据画像
+{{ data_profile_json }}
+
+# 业务约束
+{{ constraints_json }}
+
+# 硬性接口契约（程序接口，非风格建议，必须逐条满足）
+- 函数签名：def run(data_path: str) -> dict
+- 若存在标签列 "{{ label_col }}"（1=异常/0=正常），仅用于评估，不参与训练。
+- 异常分数：scores = -model.decision_function(X)（越大越可疑）；无 decision_function 时用 -score_samples 等价替代。
+- 硬标签映射：sklearn predict 返回 -1/1，必须 y_pred = (pred == -1).astype(int)。
+- 有标签：用 average_precision_score(PR-AUC) 及 f1/precision/recall(zero_division=0)；无标签：输出 Top-K 最可疑行号与分数分位数。
+- 依据 hyperparameter_space 做小规模搜索并保留最优；空则用合理默认。
+- 禁用 accuracy 作为主指标；禁止 SMOTE / 任何过采样。
+- 结尾必须：print("RESULT_JSON:" + json.dumps(metrics))
+
+# 仅输出完整 Python 代码，不要任何解释文字，不要用 ``` 包裹。

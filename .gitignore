@@ -16,3 +16,11 @@ __pycache__/
 logs/
 *.log
 *.tmp
+# 运行时生成的产物（可由流水线复现，不入库）
+DEMO.mp4
+reports/
+data/examples/
+data/knowledge_graph.json
+data/knowledge_graph.graphml
+data/synth/task_*.csv
+data/synth/_*.csv

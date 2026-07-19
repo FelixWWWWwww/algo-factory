@@ -20,7 +20,9 @@ with tab_run:
             with open(data_path, "wb") as f:
                 f.write(up.getbuffer())
         with st.spinner("Agent 流水线运行中…"):
-            state = Pipeline(use_mock=mock).run(query, data_path=data_path)
+            pipe = Pipeline(use_mock=mock)
+            state = pipe.run(query, data_path=data_path)
+            pipe.dump_state(state)              # 落盘 → 进 History
         st.success(f"最佳模型：{state.best_model}")
         st.json(state.final_metrics)
         st.subheader("方案对比")
