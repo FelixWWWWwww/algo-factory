@@ -31,6 +31,12 @@ class CuratorAgent(Agent):
         # plan_name -> algorithm 映射（ValidationResult 只存 plan_name）
         algo_of = {p.name: p.algorithm for p in state.plans}
 
+        # 失败时随手记下"当时的数据画像签名"，供 Retriever 按画像相似度判断是否规避
+        prof = state.data_profile or {}
+        prof_sig = {k: prof.get(k) for k in
+                    ("n_features", "anomaly_ratio", "scale_disparity",
+                     "anomaly_compactness", "has_time_column")}
+
         for vr in state.validation_results:
             algo = algo_of.get(vr.plan_name, vr.plan_name)
             run_id = f"validationrun:{state.task_id}:{vr.version}"
@@ -48,7 +54,7 @@ class CuratorAgent(Agent):
                 # 审计痕迹：每次运行一条（带 algorithm/task_type，可精确检索）
                 fc_id = f"failurecase:{state.task_id}:{vr.version}"
                 gs.add_node(fc_id, type="FailureCase", task_type=task_type, algorithm=algo,
-                            reason=vr.error_message or "unknown")
+                            reason=vr.error_message or "unknown", profile=prof_sig)
                 gs.add_edge(run_id, fc_id, "CAUSED_LESSON")
                 # 可复用教训：按 (task_type, algorithm) 去重，跨运行累积
                 lesson_id = f"lesson:{task_type}:{algo}"

@@ -5,11 +5,13 @@
 **说一句话需求，让 AI 智能体接力，自动完成「理解 → 检索 → 规划 → 生成 → 验证 → 沉淀」的算法复刻闭环。**
 _当前落地场景：极度不平衡的**异常检测**（Anomaly Detection）_
 
+**简体中文** ｜ **[English](README_EN.md)**
+
 <!-- Badges -->
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 ![Framework](https://img.shields.io/badge/Agent-Multi--Agent%20Pipeline-6E56CF)
 ![LLM](https://img.shields.io/badge/LLM-DeepSeek%20%7C%20OpenAI%20%7C%20Mock-10A37F)
-![Tests](https://img.shields.io/badge/tests-106%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/tests-113%20passed-brightgreen)
 ![Metric](https://img.shields.io/badge/main%20metric-PR--AUC-orange)
 ![License](https://img.shields.io/badge/License-MIT-blue)
 
@@ -43,12 +45,12 @@ https://github.com/user-attachments/assets/1c0c2a5a-d7d6-42e5-aec2-72309b9109af
 - [🏗️ 系统架构](#️-系统架构)
 - [🤖 六大 Agent 协同工作流](#-六大-agent-协同工作流)
 - [🧠 能力知识图谱](#-能力知识图谱)
-- [🚀 Quick Start](#-quick-start)
+- [🚀 快速启动](#-快速启动)
 - [📁 示例数据 & 测试任务](#-示例数据--测试任务)
 - [🧬 生成代码](#-生成代码)
 - [📊 验证结果 & 报告样例](#-验证结果--报告样例)
 - [🧗 踩过的坑与解决方案](#-踩过的坑与解决方案)
-- [🗺️ Roadmap](#️-roadmap)
+- [🗺️ 后续可扩展方向](#-后续可扩展方向)
 - [📂 项目结构](#-项目结构)
 
 ---
@@ -78,10 +80,10 @@ https://github.com/user-attachments/assets/1c0c2a5a-d7d6-42e5-aec2-72309b9109af
 | 🔒 | **沙箱安全执行** | 生成代码经 AST 安全扫描后，在隔离子进程中运行，超时硬熔断                         |
 | 🔁 | **失败自动修复** | 验证不通过 → 带"负面约束"退回重写，最多 N 轮                              |
 | 🧠 | **知识图谱自沉淀** | 每次结果（含失败案例）回写图谱，越用越聪明                                   |
-| 🔁 | **图谱自进化 · 从失败中学习** | 第二次遇到同类任务，自动检索历史失败并**规避/降级**（`demo_second_run.py` 可复现验证） |
+| 🔁 | **图谱自进化 · 画像感知学习** | 失败连同**数据画像**一起沉淀；仅当画像相似才规避该算法——换数据集算法可翻身（`demo_second_run.py` 验证） |
 | 🔌 | **三种交互入口** | CLI / Streamlit Web UI / FastAPI，一套内核全覆盖                |
 | 🎭 | **Mock / Real 无缝切换** | 无 API Key 也能全链路演示；接 DeepSeek 即真实推理                      |
-| ✅ | **106 个测试护航** | 单元 / 集成 / 端到端 / 边界用例全绿                                  |
+| ✅ | **113 个测试护航** | 单元 / 集成 / 端到端 / 边界 / 学习闭环用例全绿                        |
 
 ---
 
@@ -200,9 +202,13 @@ python demo_second_run.py
 
 > 第一次三方案平起平坐；第二次系统从知识图谱检索到 LOF / OCSVM 的失败，**主动标注并降级**——这就是"能力沉淀 → 复用"的闭环，可复现、可验证。
 
+> **🧠 画像感知升级**：失败经验会连同当时的**数据画像**（维度、异常占比、量纲、**异常紧致度**等）一起沉淀；Retriever 仅当**当前数据画像相似**（如"异常同样聚成致密簇"）时才规避该算法。换一份画像不同的数据，LOF 照样有机会当冠军——避免"一朝被蛇咬，十年怕井绳"。`demo_second_run.py` 第 3 次运行即演示此点。
+>
+> 想重新演示"从零学习"，一键清空大脑：`python cli.py reset`（回到空白，下次从头再学）。
+
 ---
 
-## 🚀 Quick Start
+## 🚀 快速启动
 
 ### 环境要求
 
@@ -335,13 +341,13 @@ timeout_sec: 60
 
 ---
 
-## 🗺️ Roadmap
+## 🗺️ 后续可扩展方向
 
 - [ ] 接入 `pyod` 的 ECOD / COPOD / AutoEncoder 深度异常检测
 - [ ] Planner 引入 Beam Search / MCTS 做方案搜索
 - [ ] 跨场景迁移：同一框架复用于文本分类 / 表格分类（`validation/*.yaml` 插件化已预留）
 - [ ] 时序 / 流式异常检测
-- [x] 知识图谱自进化：失败沉淀 → 下次自动规避（见 `demo_second_run.py`）
+- [x] 知识图谱自进化（**画像感知**）：失败连同数据画像沉淀，仅相似数据才规避（见 `demo_second_run.py`）
 - [ ] 知识图谱 PyVis 交互式可视化
 - [ ] 从真实代码仓库自动抽取函数与依赖
 
@@ -365,7 +371,7 @@ algo-factory/
 │   ├── examples/           # 生成的代码样品 · logs/  运行日志
 │   └── docs/               # 领域知识文档
 ├── reports/                # 📊 报告 + 分数图
-├── tests/ & test_*.py      # ✅ 106 个测试
+├── tests/ & test_*.py      # ✅ 113 个测试
 ├── app.py                  # 🖥️ Streamlit UI     api.py  🔌 FastAPI     cli.py  🎮 CLI
 └── requirements.txt
 ```

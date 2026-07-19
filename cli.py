@@ -5,6 +5,8 @@ cli.py
 
 import typer
 import sys
+import os
+import glob
 from pathlib import Path
 from factory.pipeline import Pipeline
 
@@ -92,6 +94,33 @@ def run_dag(
     state = pipeline.run(query, data_path=data)
     print(f"\n✅ 完成：best={state.best_model}  metrics={state.final_metrics}")
     print(f"   日志：{pipeline.dump_state(state)}")
+
+
+@app.command()
+def reset(
+        history: bool = typer.Option(False, "--history", help="同时清空运行历史 logs/*.json"),
+):
+    """一键清空已学习的知识（知识图谱），让系统回到“空白大脑”，便于演示从零学习。"""
+    _ensure_utf8_stdout()
+    targets = ["data/knowledge_graph.json", "data/knowledge_graph.graphml"]
+    if history:
+        targets += glob.glob("logs/*.json")
+
+    done = 0
+    for p in targets:
+        if not os.path.exists(p):
+            continue
+        try:
+            os.remove(p)
+            done += 1
+        except OSError:
+            # 删不掉就倒空（知识图谱写空图，其它跳过）
+            if p.endswith("knowledge_graph.json"):
+                Path(p).write_text('{"nodes": {}, "edges": []}', encoding="utf-8")
+                done += 1
+
+    print(f"🧹 已清空知识图谱{'（含运行历史）' if history else ''} —— 处理 {done} 个文件。")
+    print("   系统已回到空白大脑，下次运行将从零重新学习。")
 
 
 if __name__ == "__main__":

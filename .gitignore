@@ -24,3 +24,4 @@ data/knowledge_graph.json
 data/knowledge_graph.graphml
 data/synth/task_*.csv
 data/synth/_*.csv
+data/synth/demo_spread.csv

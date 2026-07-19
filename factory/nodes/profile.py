@@ -42,6 +42,21 @@ def profile_node(state: "TaskState", data_path: str, label_col: str = "label") -
 
     missing_rate = round(float(feat.isna().mean().max()), 4) if len(feat.columns) else 0.0
 
+    # 异常紧致度：异常样本的特征离散度 / 全体离散度。
+    #   << 1 → 异常聚成致密簇（LOF 靠局部密度会漏检）；>= 1 → 异常离散分布（LOF 擅长）。
+    #   这是决定"同一算法在不同数据上成败"的关键判别特征。
+    anomaly_compactness = None
+    if has_labels and numeric:
+        try:
+            y = (df[lc].values == 1)
+            fn = feat[numeric]
+            if y.sum() > 1:
+                a_std = float(fn[y].std().mean())
+                o_std = float(fn.std().mean())
+                anomaly_compactness = round(a_std / (o_std + 1e-9), 3)
+        except Exception:
+            anomaly_compactness = None
+
     state.data_profile = {
         "n_samples": int(len(df)),
         "n_features": int(feat.shape[1]),
@@ -54,6 +69,7 @@ def profile_node(state: "TaskState", data_path: str, label_col: str = "label") -
         "anomaly_ratio": anomaly_ratio,
         "missing_rate": missing_rate,
         "scale_disparity": scale_disparity,
+        "anomaly_compactness": anomaly_compactness,
         "has_time_column": len(time_cols) > 0,
     }
     if anomaly_ratio is not None:

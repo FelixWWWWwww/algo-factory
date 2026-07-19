@@ -62,11 +62,18 @@ class Pipeline:
         # d 生成代码
         state = CoderAgent(self.llm, out_dir=os.path.join(self.work_dir, "examples")).run(state)
 
-        # e→f 逐方案：验证 + 修复循环
+        # ⑤ e→f 验证（五层沙箱验证：语法→安全→运行→指标→签名；作为流水线第 5 步显式呈现）
+        print(f"\n{'=' * 60}\n[Validator] 开始执行\n{'=' * 60}")
         config = load_config()
         for plan, cv in zip(state.plans, state.code_versions):
+            print(f"  ── 五层验证 · {plan.name} ──")
             report = self._validate_with_repair(plan, cv, data_path, config, state)
             status = "passed" if report.status == "passed" else "failed"
+            pr = (report.metrics or {}).get("pr_auc")
+            detail = f"  PR-AUC={pr}" if pr is not None else ""
+            if status != "passed":
+                detail += f"  [{report.failed_layer}] {str(report.message)[:40]}"
+            print(f"     → {status}{detail}")
             state.add_validation_result(
                 cv.version, plan.name, status,
                 metrics=report.metrics,
@@ -74,6 +81,7 @@ class Pipeline:
             )
             plan.actual_metric = (report.metrics or {}).get("pr_auc")
             plan.validation_status = "success" if status == "passed" else "failed"
+        print(f"\n✅ [Validator] 完成（已验证 {len(state.validation_results)} 个方案）")
 
         # 择优（T3.5）
         self._select_best(state)
