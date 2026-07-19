@@ -177,7 +177,7 @@ Run #3 (a DIFFERENT dataset, different profile)
     3. OneClassSVM         [proposed]
 ```
 
-> **🧠 Profile-aware upgrade**: each failure is stored together with its **data profile** (dims, anomaly ratio, scale disparity, **anomaly compactness**, …). The Retriever avoids an algorithm **only when the current profile is similar** (e.g. “anomalies also form a dense cluster”). Feed a differently-shaped dataset and LOF gets a fresh chance to win — no “once bitten, twice shy”. Run #3 in `demo_second_run.py` demonstrates exactly this.
+> **🧠 Profile-aware upgrade**: each failure is stored together with its **data profile** (dims, anomaly ratio, scale disparity, **anomaly compactness**, …). The Retriever avoids an algorithm **only when the current profile is similar** (e.g. “anomalies also form a dense cluster”). Run #3 in `demo_second_run.py` demonstrates exactly this.
 >
 > To demo learning from scratch, wipe the brain first: `python cli.py reset`.
 
